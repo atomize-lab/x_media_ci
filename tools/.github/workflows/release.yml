@@ -1,0 +1,103 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-exe:
+    name: Windows server .exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r tools/requirements.txt
+          python -m pip install -r tools/server/requirements.txt
+      - name: Build with PyInstaller
+        run: pyinstaller --noconfirm --clean tools/server/x_media_ci_server.spec
+      - name: Verify exe
+        run: |
+          tools\dist\x_media_ci_server.exe &
+          $env:X_MEDIA_CI_PORT = "8765"
+          Start-Sleep -Seconds 5
+          (Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8765/api/health").Content
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x_media_ci_server-windows-x64
+          path: tools/dist/x_media_ci_server.exe
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: tools/dist/x_media_ci_server.exe
+
+  linux-tarball:
+    name: Linux server .tar.gz
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build portable tarball
+        run: bash tools/server/build_linux.sh
+      - name: Smoke-test
+        run: |
+          tar -xzf tools/dist/x_media_ci_server-linux-x64.tar.gz -C /tmp
+          X_MEDIA_CI_ROOT=$PWD/../accounts /tmp/x_media_ci_server-linux-x64/bin/run.sh &
+          sleep 5
+          curl -sf http://127.0.0.1:8765/api/health
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x_media_ci_server-linux-x64
+          path: tools/dist/x_media_ci_server-linux-x64.tar.gz
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: tools/dist/x_media_ci_server-linux-x64.tar.gz
+
+  android-apk:
+    name: Android 14+ APK
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+      - run: flutter --version
+      - name: Bootstrap Flutter project
+        working-directory: tools/app
+        run: |
+          flutter create . --project-name x_media_ci_app --platforms=android
+          flutter pub get
+      - name: Build release APK
+        working-directory: tools/app
+        run: flutter build apk --release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x_media_ci_app-android-release
+          path: tools/app/build/app/outputs/flutter-apk/app-release.apk
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: tools/app/build/app/outputs/flutter-apk/app-release.apk

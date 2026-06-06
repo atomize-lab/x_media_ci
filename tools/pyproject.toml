@@ -1,0 +1,27 @@
+[project]
+name = "x_media_ci"
+version = "0.1.0"
+description = "CLI helpers for the x_media/CI long-term tweet storage layout."
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "Pillow>=10.0",
+    "reportlab>=4.0",
+]
+
+[project.optional-dependencies]
+ocr = [
+    # Only needed for the ocr / ocr-long / ocr-md sub-commands.
+    # tesseract itself is a system binary, not a PyPI package.
+]
+dev = [
+    "pyflakes>=3.0",
+]
+
+[project.scripts]
+# Lets users do:  x-media-ci md --tweet-dir ...
+x-media-ci = "x_media_ci.cli:main"
+
+[tool.pyflakes]
+exclude = ["build", "dist"]

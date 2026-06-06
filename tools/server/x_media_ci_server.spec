@@ -1,0 +1,122 @@
+# PyInstaller spec for the x_media CI server.
+#
+# We build TWO executables so users can pick their preferred style:
+#
+#   x_media_ci_server.exe          (console)   <- DEFAULT for the typical
+#                                                "double-click and see what
+#                                                 happens" experience
+#   x_media_ci_server_windowed.exe (no console) <- for users who want a
+#                                                 silent tray-style launcher
+#
+# Build:
+#   pyinstaller --noconfirm --clean server/x_media_ci_server.spec
+#
+# Output (Windows):
+#   server/dist/x_media_ci_server.exe
+#   server/dist/x_media_ci_server_windowed.exe
+
+# -*- mode: python ; coding: utf-8 -*-
+
+import sys
+from pathlib import Path
+from PyInstaller.utils.hooks import collect_submodules
+
+block_cipher = None
+
+# We need these modules bundled because the entry point imports them
+# dynamically (FastAPI / Pydantic introspection).
+hiddenimports = []
+hiddenimports += collect_submodules("uvicorn")
+hiddenimports += collect_submodules("fastapi")
+hiddenimports += collect_submodules("pydantic")
+hiddenimports += collect_submodules("anyio")
+hiddenimports += collect_submodules("starlette")
+
+# Bundle the x_media_ci scripts package so the frozen server can still
+# run md / pdf / ocr / fix / transcode jobs. Also bundle the
+# x_media_ci.py entry point so the server can spawn it as a subprocess.
+server_dir = Path(SPECPATH).resolve()  # SPECPATH = directory holding this .spec
+tools_root = server_dir.parent
+scripts_pkg = tools_root / "scripts"
+x_media_ci_py = tools_root / "x_media_ci.py"
+datas = [
+    (str(scripts_pkg), "scripts"),
+]
+if x_media_ci_py.is_file():
+    datas.append((str(x_media_ci_py), "."))
+
+# The bundled start.cmd sits next to the exe so the user has a "one
+# click + black window" experience.
+start_cmd = tools_root / "server" / "start.cmd"
+if start_cmd.is_file():
+    datas.append((str(start_cmd), "."))
+
+a = Analysis(
+    [str(server_dir / "_frozen_entry.py")],
+    pathex=[str(server_dir)],
+    binaries=[],
+    datas=datas,
+    hiddenimports=hiddenimports,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[
+        "tkinter",
+        "matplotlib",
+        "numpy.tests",
+        "PIL.ImageQt",
+    ],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+# Console build: default for the typical "I just want to double-click"
+# use case. Errors and access logs are visible.
+exe_console = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name="x_media_ci_server",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=True,
+    disable_windowed_traceback=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=None,
+)
+
+# Windowed build: same binary, but no console popup. Logs go to
+# x_media_ci_server.log next to the exe. Useful for a silent launcher.
+exe_windowed = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name="x_media_ci_server_windowed",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,
+    disable_windowed_traceback=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=None,
+)

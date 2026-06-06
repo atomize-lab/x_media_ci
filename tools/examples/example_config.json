@@ -1,0 +1,16 @@
+{
+  "_comment": "Example configuration consumed by x_media_ci CLI for batch runs.",
+  "ci_root": "../",
+  "ocr_lang": "chi_sim+eng",
+  "pdf": {
+    "enabled": true,
+    "cjk_font_hint": "auto"
+  },
+  "md": {
+    "enabled": true
+  },
+  "ocr": {
+    "enabled": true,
+    "screenshot_glob": "media/images/*.png"
+  }
+}
