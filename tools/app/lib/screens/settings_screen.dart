@@ -16,6 +16,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _ctrl;
+  late final TextEditingController _authToken;
+  late final TextEditingController _ct0;
   String? _health;
   bool _remoteEnabled = false;
 
@@ -23,12 +25,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: CiApi.instance.baseUrl);
+    _authToken = TextEditingController(text: CiApi.instance.xAuthToken);
+    _ct0 = TextEditingController(text: CiApi.instance.xCt0);
     _remoteEnabled = CiApi.instance.remoteEnabled;
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _authToken.dispose();
+    _ct0.dispose();
     super.dispose();
   }
 
@@ -48,6 +54,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        const Text(
+          "X 登录态（可选）：填 auth_token + ct0 后，Local 抓取会直接注入 Cookie，尽量避免网页登录。\n"
+          "不要把这两个值发给任何人。",
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _authToken,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: "auth_token",
+            hintText: "从浏览器 Cookie 复制 value",
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _ct0,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: "ct0",
+            hintText: "从浏览器 Cookie 复制 value",
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton(
+              onPressed: () => setState(() {
+                _authToken.text = "";
+                _ct0.text = "";
+              }),
+              child: const Text("清空 X Cookie"),
+            ),
+          ],
+        ),
+        const Divider(height: 32),
         SwitchListTile(
           title: const Text("启用电脑服务（Browse/Remote/Edit）"),
           subtitle: const Text("关闭后 App 完全不依赖电脑，只用 Local。"),
@@ -87,6 +130,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               CiApi.instance.baseUrl = _ctrl.text;
               CiApi.instance.remoteEnabled = _remoteEnabled;
+              CiApi.instance.xAuthToken = _authToken.text;
+              CiApi.instance.xCt0 = _ct0.text;
               CiApi.instance.save();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Saved")),

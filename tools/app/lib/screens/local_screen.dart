@@ -8,6 +8,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'dart:convert';
 import 'dart:io';
 
+import '../api/ci_api.dart';
+
 class LocalScreen extends StatefulWidget {
   const LocalScreen({super.key});
 
@@ -163,13 +165,17 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
           ),
           Expanded(
             child: InAppWebView(
-              initialUrlRequest: URLRequest(url: WebUri(_url)),
+              initialUrlRequest: URLRequest(url: WebUri("https://x.com/")),
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: true,
                 mediaPlaybackRequiresUserGesture: true,
                 allowsInlineMediaPlayback: true,
+                sharedCookiesEnabled: true,
               ),
-              onWebViewCreated: (c) => _web = c,
+              onWebViewCreated: (c) async {
+                _web = c;
+                await _prepareAndLoad();
+              },
               onLoadStop: (c, _) async {
                 await _extractFromDom();
               },
@@ -219,6 +225,42 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
     );
   }
 
+  Future<void> _prepareAndLoad() async {
+    final c = _web;
+    if (c == null) return;
+    await _applyXCookies();
+    await c.loadUrl(urlRequest: URLRequest(url: WebUri(_url)));
+  }
+
+  Future<void> _applyXCookies() async {
+    final auth = CiApi.instance.xAuthToken;
+    final ct0 = CiApi.instance.xCt0;
+    if (auth.isEmpty || ct0.isEmpty) {
+      _pushLog("[cookie] no auth_token/ct0 (will rely on web login)");
+      return;
+    }
+    final cm = CookieManager.instance();
+    await cm.setCookie(
+      url: WebUri("https://x.com/"),
+      name: "auth_token",
+      value: auth,
+      domain: ".x.com",
+      path: "/",
+      isHttpOnly: true,
+      isSecure: true,
+    );
+    await cm.setCookie(
+      url: WebUri("https://x.com/"),
+      name: "ct0",
+      value: ct0,
+      domain: ".x.com",
+      path: "/",
+      isHttpOnly: false,
+      isSecure: true,
+    );
+    _pushLog("[cookie] injected auth_token + ct0");
+  }
+
   Future<void> _extractFromDom() async {
     final c = _web;
     if (c == null) return;
@@ -227,6 +269,14 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
 (() => {
   const art = document.querySelector('article');
   if (!art) return JSON.stringify({ ok:false, err:'no-article' });
+  let handle = '';
+  const links = Array.from(art.querySelectorAll('a[href^="/"]'))
+    .map(a => (a.getAttribute('href') || '').trim())
+    .filter(h => h.includes('/status/'));
+  for (const h of links) {
+    const m = h.match(/^\\/([^/]+)\\/status\\//);
+    if (m && m[1] && m[1] !== 'i') { handle = m[1]; break; }
+  }
   const timeEl = art.querySelector('time');
   const dt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
   const textNodes = Array.from(art.querySelectorAll('div[data-testid="tweetText"], div[lang]'));
@@ -238,17 +288,19 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
   const imgs = Array.from(art.querySelectorAll('img'))
     .map(i => (i.getAttribute('src') || '').trim())
     .filter(s => s.includes('pbs.twimg.com/media/'));
-  return JSON.stringify({ ok:true, dt, text: parts.join('\\n'), imgs });
+  return JSON.stringify({ ok:true, dt, handle, text: parts.join('\\n'), imgs });
 })()
 """;
       final raw = await c.evaluateJavascript(source: js);
       final m = jsonDecode(raw.toString());
       if (m is Map && (m["ok"] == true)) {
         final dt = (m["dt"] ?? "").toString();
+        final handle = (m["handle"] ?? "").toString();
         final text = (m["text"] ?? "").toString();
         final imgs = (m["imgs"] is List) ? (m["imgs"] as List) : const [];
         setState(() {
           if (dt.isNotEmpty) _dtUtc = dt;
+          if ((_handle.isEmpty || _handle == "i") && handle.isNotEmpty) _handle = handle;
           if (text.isNotEmpty) _text = text;
           for (final u in imgs) {
             _imageUrls.add(_pbsToOrig(u.toString()));

@@ -17,8 +17,12 @@ class CiApi {
 
   static const _kBaseUrlKey = "ci.base_url";
   static const _kRemoteEnabledKey = "ci.remote_enabled";
+  static const _kXAuthTokenKey = "x.auth_token";
+  static const _kXCt0Key = "x.ct0";
   String _baseUrl = "";
   bool _remoteEnabled = false;
+  String _xAuthToken = "";
+  String _xCt0 = "";
 
   String get baseUrl => _baseUrl;
   set baseUrl(String v) {
@@ -30,6 +34,18 @@ class CiApi {
     _remoteEnabled = v;
   }
 
+  String get xAuthToken => _xAuthToken;
+  set xAuthToken(String v) {
+    _xAuthToken = v.trim();
+  }
+
+  String get xCt0 => _xCt0;
+  set xCt0(String v) {
+    _xCt0 = v.trim();
+  }
+
+  bool get hasXCookies => _xAuthToken.isNotEmpty && _xCt0.isNotEmpty;
+
   bool get isConfigured =>
       _baseUrl.isNotEmpty && (_baseUrl.startsWith("http://") || _baseUrl.startsWith("https://"));
 
@@ -40,12 +56,16 @@ class CiApi {
       baseUrl = v;
     }
     _remoteEnabled = p.getBool(_kRemoteEnabledKey) ?? false;
+    xAuthToken = p.getString(_kXAuthTokenKey) ?? "";
+    xCt0 = p.getString(_kXCt0Key) ?? "";
   }
 
   Future<void> save() async {
     final p = await SharedPreferences.getInstance();
     await p.setString(_kBaseUrlKey, _baseUrl);
     await p.setBool(_kRemoteEnabledKey, _remoteEnabled);
+    await p.setString(_kXAuthTokenKey, _xAuthToken);
+    await p.setString(_kXCt0Key, _xCt0);
   }
 
   Uri _u(String path) {
