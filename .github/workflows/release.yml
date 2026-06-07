@@ -104,21 +104,43 @@ jobs:
           flutter pub get
       - name: Patch Android Kotlin version
         working-directory: tools/app
-        shell: bash
         run: |
-          set -euo pipefail
-          # Some Flutter templates still use older Kotlin plugin versions, but
-          # modern plugins (e.g. shared_preferences_android) require Kotlin 1.9+.
-          if [ -f android/build.gradle ]; then
-            sed -i -E "s/(ext\\.kotlin_version\\s*=\\s*)'[^']+'/(\\1)'1.9.22'/g" android/build.gradle || true
-          fi
-          # Newer Gradle templates use plugin DSL in settings.gradle(.kts)
-          for f in android/settings.gradle android/settings.gradle.kts android/build.gradle.kts; do
-            if [ -f \"$f\" ]; then
-              sed -i -E \"s/(org\\.jetbrains\\.kotlin\\.android\\\"\\s+version\\s+\\\")([0-9.]+)(\\\")/\\11.9.22\\3/g\" \"$f\" || true
-              sed -i -E \"s/(kotlin\\(\\\"android\\\"\\)\\s+version\\s+\\\")([0-9.]+)(\\\")/\\11.9.22\\3/g\" \"$f\" || true
-            fi
-          done
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          
+          root = Path("android")
+          targets = [
+              root / "build.gradle",
+              root / "settings.gradle",
+              root / "settings.gradle.kts",
+              root / "build.gradle.kts",
+          ]
+          
+          def patch(p: Path) -> bool:
+              if not p.exists():
+                  return False
+              s = p.read_text(encoding="utf-8", errors="replace")
+              orig = s
+              s = re.sub(r"(ext\\.kotlin_version\\s*=\\s*)'[^']+'", r"\\g<1>'1.9.22'", s)
+              s = re.sub(
+                  r'(id\\s+"org\\.jetbrains\\.kotlin\\.android"\\s+version\\s+)"[0-9.]+"',
+                  r'\\g<1>"1.9.22"',
+                  s,
+              )
+              s = re.sub(
+                  r'(kotlin\\("android"\\)\\s+version\\s+)"[0-9.]+"',
+                  r'\\g<1>"1.9.22"',
+                  s,
+              )
+              if s != orig:
+                  p.write_text(s, encoding="utf-8")
+                  return True
+              return False
+          
+          changed = [str(p) for p in targets if patch(p)]
+          print("patched:", changed)
+          PY
       - name: Build release APK
         working-directory: tools/app
         run: flutter build apk --release
