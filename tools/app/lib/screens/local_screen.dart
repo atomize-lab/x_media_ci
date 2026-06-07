@@ -1,5 +1,6 @@
 // Local screen: independent download on the phone.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
@@ -213,6 +214,15 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
     });
   }
 
+  Future<void> _copyLogs() async {
+    final text = _log.join("\n");
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("已复制日志到剪贴板")),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -260,6 +270,10 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       appBar: AppBar(
         title: const Text("Local Capture"),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.copy_all),
+            onPressed: _copyLogs,
+          ),
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: canSave ? _saveAll : null,
@@ -342,7 +356,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
               children: [
                 for (final s in _log.reversed.take(12))
-                  Text(
+                  SelectableText(
                     s,
                     style: const TextStyle(fontFamily: "monospace", fontSize: 11),
                   ),
@@ -614,21 +628,14 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       await File(p.join(rawDir.path, "video_urls.json"))
           .writeAsString(const JsonEncoder.withIndent("  ").convert(videosJson));
 
-      (int, String)? bestCandidate(List<String> urls) {
-        (int, String)? best;
-        for (final u in urls) {
-          final m = RegExp(r"/vid/(?:[a-zA-Z0-9_-]+/)?(\d+)x(\d+)/").firstMatch(u);
-          final w = int.tryParse(m?.group(1) ?? "") ?? 0;
-          final h = int.tryParse(m?.group(2) ?? "") ?? 0;
-          final area = w * h;
-          if (best == null || area > best.$1) {
-            best = (area, u);
-          }
-        }
-        return best ?? (urls.isNotEmpty ? (0, urls.first) : null);
+      int areaOf(String u) {
+        final m = RegExp(r"/vid/(?:[a-zA-Z0-9_-]+/)?(\d+)x(\d+)/").firstMatch(u);
+        final w = int.tryParse(m?.group(1) ?? "") ?? 0;
+        final h = int.tryParse(m?.group(2) ?? "") ?? 0;
+        return w * h;
       }
 
-      final ranked = <(int, String, String)>[];
+      final groups = <String, ({int bestArea, List<String> mp4, List<String> m3u8})>{};
       var anyM3u8 = false;
       for (final k in keys) {
         final g = _videoUrls[k]!;
@@ -638,40 +645,85 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
             .toList();
         final m3u8Urls = g["m3u8"]!.toList();
         if (m3u8Urls.isNotEmpty) anyM3u8 = true;
-        final cand = bestCandidate(mp4Urls);
-        if (cand != null) {
-          ranked.add((cand.$1, k, cand.$2));
+        var bestArea = 0;
+        for (final u in mp4Urls) {
+          final a = areaOf(u);
+          if (a > bestArea) bestArea = a;
         }
+        groups[k] = (bestArea: bestArea, mp4: mp4Urls, m3u8: m3u8Urls);
       }
-      ranked.sort((a, b) => b.$1.compareTo(a.$1));
 
-      final chosen = ranked.take(3).toList();
-      if (chosen.isEmpty) {
+      final pickedKeys = keys.toList()
+        ..sort((a, b) => (groups[b]?.bestArea ?? 0).compareTo(groups[a]?.bestArea ?? 0));
+      final chosenKeys = pickedKeys.take(3).toList();
+
+      if (chosenKeys.isEmpty) {
         _pushLog("[vid] no mp4 captured. Press 刷新提取, then tap Play once and Save again.");
         if (anyM3u8) {
-          _pushLog("[vid] m3u8 exists but app does not remux it into playable mp4 on-device.");
+          _pushLog("[vid] m3u8 captured; if mp4 is missing, the tweet may be streaming-only.");
         }
       } else {
         var vIdx = 1;
-        for (final it in chosen) {
-          final area = it.$1;
-          final k = it.$2;
-          final bestMp4 = it.$3;
+        for (final k in chosenKeys) {
+          final g = groups[k]!;
+          final mp4s = g.mp4.toList()..sort((a, b) => areaOf(b).compareTo(areaOf(a)));
           final vname = "${_tweetId}_video_${vIdx.toString().padLeft(2, "0")}.mp4";
           final out = File(p.join(videoDir.path, vname));
-          try {
-            await _downloadToFile(bestMp4, out, headers: headers, validateMp4: true);
-            media.add({
-              "type": "video",
-              "mime": "video/mp4",
-              "file": vname,
-              "source_url": bestMp4,
-            });
-            _pushLog("[vid] ok mp4 $vname (${out.lengthSync()}) area=$area group=$k");
-          } catch (e) {
+
+          var ok = false;
+          for (final u in mp4s) {
+            final clen = await _probeContentLength(u, headers: headers);
+            if (clen > 0 && clen < 200 * 1024) {
+              _pushLog("[vid] skip tiny mp4 content-length=$clen url=$u");
+              continue;
+            }
+            try {
+              await _downloadToFile(u, out, headers: headers, validateMp4: true);
+              media.add({
+                "type": "video",
+                "mime": "video/mp4",
+                "file": vname,
+                "source_url": u,
+              });
+              _pushLog("[vid] ok mp4 $vname (${out.lengthSync()}) area=${areaOf(u)} group=$k");
+              ok = true;
+              break;
+            } catch (e) {
+              _pushLog("[vid] mp4 fail $e");
+            }
+          }
+
+          if (!ok && g.m3u8.isNotEmpty) {
+            try {
+              final m3u8 = await _pickBestM3u8(g.m3u8, headers: headers) ?? g.m3u8.first;
+              await File(p.join(rawDir.path, "video_m3u8_chosen_${vIdx.toString().padLeft(2, "0")}.txt"))
+                  .writeAsString(m3u8);
+              final hlsOk = await _downloadHlsToFile(m3u8, out, headers: headers);
+              if (hlsOk && out.existsSync() && out.lengthSync() > 200 * 1024) {
+                media.add({
+                  "type": "video",
+                  "mime": "video/mp4",
+                  "file": vname,
+                  "source_url": m3u8,
+                  "derived_from": "m3u8",
+                });
+                _pushLog("[vid] ok hls $vname (${out.lengthSync()}) group=$k");
+                ok = true;
+              } else {
+                try {
+                  if (out.existsSync()) await out.delete();
+                } catch (_) {}
+                _pushLog("[vid] hls failed (may need ffmpeg remux)");
+              }
+            } catch (e) {
+              _pushLog("[vid] hls fail $e");
+            }
+          }
+
+          if (!ok) {
             await File(p.join(rawDir.path, "video_error_${vIdx.toString().padLeft(2, "0")}.txt"))
-                .writeAsString(e.toString());
-            _pushLog("[vid] fail $e");
+                .writeAsString("group=$k\nmp4=${g.mp4.length}\nm3u8=${g.m3u8.length}\n");
+            _pushLog("[vid] failed to save group=$k");
           }
           vIdx += 1;
         }
@@ -823,8 +875,18 @@ bool _looksLikeMp4(List<int> bytes) {
 }
 
 String _snippetText(List<int> bytes) {
-  final n = bytes.length > 280 ? 280 : bytes.length;
-  return utf8.decode(bytes.sublist(0, n), allowMalformed: true).replaceAll("\n", "\\n");
+  final n = bytes.length > 96 ? 96 : bytes.length;
+  final b = bytes.sublist(0, n);
+  final hex = b.map((x) => x.toRadixString(16).padLeft(2, "0")).join();
+  var ascii = "";
+  for (final x in b) {
+    if (x >= 0x20 && x <= 0x7E) {
+      ascii += String.fromCharCode(x);
+    } else {
+      ascii += ".";
+    }
+  }
+  return "hex=$hex ascii=$ascii";
 }
 
 Future<void> _downloadToFile(
@@ -840,26 +902,76 @@ Future<void> _downloadToFile(
     if (validateMp4) {
       req.headers["Accept"] = "*/*";
     }
-    final streamed = await client.send(req);
-    final resp = await http.Response.fromStream(streamed);
+    final resp = await client.send(req);
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
       throw Exception("HTTP ${resp.statusCode} for $url");
     }
-    if (validateMp4) {
-      final ct = (resp.headers["content-type"] ?? "").toLowerCase();
-      final bytes = resp.bodyBytes;
-      if (ct.contains("text/html") || ct.contains("application/json")) {
-        throw Exception("Not mp4 (content-type=$ct) head=${_snippetText(bytes)}");
-      }
-      if (bytes.length < 64 * 1024) {
-        throw Exception("MP4 too small (${bytes.length} bytes) head=${_snippetText(bytes)}");
-      }
-      if (!_looksLikeMp4(bytes)) {
-        throw Exception("Not mp4 head=${_snippetText(bytes)}");
-      }
+    final ct = (resp.headers["content-type"] ?? "").toLowerCase();
+    if (validateMp4 && (ct.contains("text/html") || ct.contains("application/json"))) {
+      throw Exception("Not mp4 (content-type=$ct)");
     }
     await out.parent.create(recursive: true);
-    await out.writeAsBytes(resp.bodyBytes);
+    final sink = out.openWrite();
+    final head = <int>[];
+    var total = 0;
+    try {
+      await for (final chunk in resp.stream) {
+        total += chunk.length;
+        if (head.length < 96) {
+          final need = 96 - head.length;
+          head.addAll(chunk.take(need));
+        }
+        sink.add(chunk);
+      }
+    } finally {
+      await sink.close();
+    }
+    if (validateMp4) {
+      if (total < 200 * 1024) {
+        try {
+          await out.delete();
+        } catch (_) {}
+        throw Exception("MP4 too small ($total bytes) head=${_snippetText(head)} ct=$ct");
+      }
+      if (!_looksLikeMp4(head)) {
+        try {
+          await out.delete();
+        } catch (_) {}
+        throw Exception("Not mp4 head=${_snippetText(head)} ct=$ct");
+      }
+    }
+  } finally {
+    client.close();
+  }
+}
+
+Future<int> _probeContentLength(String url, {required Map<String, String> headers}) async {
+  final client = http.Client();
+  try {
+    final req = http.Request("HEAD", Uri.parse(url));
+    req.headers.addAll(headers);
+    final resp = await client.send(req);
+    if (resp.statusCode >= 200 && resp.statusCode < 400) {
+      final v = resp.headers["content-length"];
+      final n = int.tryParse(v ?? "");
+      if (n != null) return n;
+      return 0;
+    }
+    if (resp.statusCode == 405 || resp.statusCode == 403) {
+      final r = http.Request("GET", Uri.parse(url));
+      r.headers.addAll(headers);
+      r.headers["Range"] = "bytes=0-0";
+      final rr = await client.send(r);
+      if (rr.statusCode >= 200 && rr.statusCode < 400) {
+        final v = rr.headers["content-range"] ?? rr.headers["content-length"] ?? "";
+        final m = RegExp(r"/(\d+)$").firstMatch(v);
+        if (m != null) return int.tryParse(m.group(1) ?? "") ?? 0;
+        return int.tryParse(rr.headers["content-length"] ?? "") ?? 0;
+      }
+    }
+    return 0;
+  } catch (_) {
+    return 0;
   } finally {
     client.close();
   }
