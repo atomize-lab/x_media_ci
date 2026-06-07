@@ -239,26 +239,30 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       _pushLog("[cookie] no auth_token/ct0 (will rely on web login)");
       return;
     }
-    final cm = CookieManager.instance();
-    await cm.setCookie(
-      url: WebUri("https://x.com/"),
-      name: "auth_token",
-      value: auth,
-      domain: ".x.com",
-      path: "/",
-      isHttpOnly: true,
-      isSecure: true,
-    );
-    await cm.setCookie(
-      url: WebUri("https://x.com/"),
-      name: "ct0",
-      value: ct0,
-      domain: ".x.com",
-      path: "/",
-      isHttpOnly: false,
-      isSecure: true,
-    );
-    _pushLog("[cookie] injected auth_token + ct0");
+    try {
+      final cm = CookieManager.instance();
+      await cm.setCookie(
+        url: WebUri("https://x.com/"),
+        name: "auth_token",
+        value: auth,
+        domain: ".x.com",
+        path: "/",
+        isHttpOnly: true,
+        isSecure: true,
+      );
+      await cm.setCookie(
+        url: WebUri("https://x.com/"),
+        name: "ct0",
+        value: ct0,
+        domain: ".x.com",
+        path: "/",
+        isHttpOnly: false,
+        isSecure: true,
+      );
+      _pushLog("[cookie] injected auth_token + ct0");
+    } catch (e) {
+      _pushLog("[cookie] inject failed: $e");
+    }
   }
 
   Future<void> _extractFromDom() async {
@@ -335,6 +339,14 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
     if (_busy) return;
     if (_tweetId.isEmpty || _handle.isEmpty) {
       _pushLog("[save] URL 解析失败");
+      return;
+    }
+    if (_text.trim().isEmpty && _imageUrls.isEmpty && _videoUrls.isEmpty) {
+      _pushLog("[save] 未抓到内容：先点“刷新提取”，必要时在网页里登录/播放视频");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("未抓到内容：先刷新提取/登录/播放视频")),
+      );
       return;
     }
     setState(() => _busy = true);
