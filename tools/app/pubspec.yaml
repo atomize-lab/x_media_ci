@@ -11,8 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.0
+  path: ^1.9.0
   path_provider: ^2.1.2
   shared_preferences: ^2.2.2
+  flutter_inappwebview: ^6.1.5
+  pdf: ^3.11.0
   # photo_view / cached_network_image can be added when we wire media preview
   # dio: ^5.4.0          # used by the future "independent download" feature
   # file_picker: ^6.1.1  # used by the future "edit tweet.json" feature

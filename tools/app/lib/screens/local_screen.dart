@@ -1,11 +1,12 @@
 // Local screen: independent download on the phone.
-//
-// This is a deliberately minimal scaffold. Production implementation
-// should use `dio` for resumable downloads and `path_provider` for
-// the app's documents directory. We intentionally keep this UI-only
-// for now so the rest of the app is exercisable.
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'dart:convert';
+import 'dart:io';
 
 class LocalScreen extends StatefulWidget {
   const LocalScreen({super.key});
@@ -44,11 +45,7 @@ class _LocalScreenState extends State<LocalScreen> {
           style: const TextStyle(fontFamily: "monospace"),
         ),
         const SizedBox(height: 12),
-        const Text(
-          "Paste a tweet URL to download media into the app's local "
-          "sandbox. (Implementation TODO: plug in dio + a tweet fetcher "
-          "that produces a CI-shaped folder on the device.)",
-        ),
+        const Text("输入推文 URL，在手机本地落盘：tweet.json / media / md / pdf。"),
         const SizedBox(height: 12),
         TextField(
           controller: _url,
@@ -60,14 +57,672 @@ class _LocalScreenState extends State<LocalScreen> {
         const SizedBox(height: 12),
         FilledButton.icon(
           icon: const Icon(Icons.download),
-          label: const Text("Download (TODO)"),
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Downloader not wired yet")),
-            );
-          },
+          label: const Text("打开网页并抓取"),
+          onPressed: _appDocsDir == null
+              ? null
+              : () {
+                  final u = _url.text.trim();
+                  if (u.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("请先粘贴推文 URL")),
+                    );
+                    return;
+                  }
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _LocalCaptureScreen(
+                        url: u,
+                        baseDir: _appDocsDir!,
+                      ),
+                    ),
+                  );
+                },
         ),
       ],
     );
   }
+}
+
+class _LocalCaptureScreen extends StatefulWidget {
+  final String url;
+  final String baseDir;
+  const _LocalCaptureScreen({required this.url, required this.baseDir});
+
+  @override
+  State<_LocalCaptureScreen> createState() => _LocalCaptureScreenState();
+}
+
+class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
+  final _log = <String>[];
+  InAppWebViewController? _web;
+  bool _busy = false;
+
+  String _url = "";
+  String _handle = "";
+  String _tweetId = "";
+  String _dtUtc = "";
+  String _text = "";
+
+  final _imageUrls = <String>{};
+  final _videoUrls = <String, Map<String, Set<String>>>{};
+
+  void _pushLog(String s) {
+    setState(() {
+      _log.add(s);
+      if (_log.length > 300) {
+        _log.removeRange(0, _log.length - 300);
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _url = widget.url.trim();
+    final parsed = _parseTweetUrl(_url);
+    _handle = parsed.$1;
+    _tweetId = parsed.$2;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canSave = _tweetId.isNotEmpty && !_busy;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Local Capture"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: canSave ? _saveAll : null,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _url,
+                  style: const TextStyle(fontFamily: "monospace", fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "提示：首次请在此网页里登录 x.com；有视频请点一下播放，方便抓到 video 链接。",
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "images=${_imageUrls.length}  videos=${_videoUrls.length}  busy=$_busy",
+                  style: const TextStyle(fontFamily: "monospace", fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: InAppWebView(
+              initialUrlRequest: URLRequest(url: WebUri(_url)),
+              initialSettings: InAppWebViewSettings(
+                javaScriptEnabled: true,
+                mediaPlaybackRequiresUserGesture: true,
+                allowsInlineMediaPlayback: true,
+              ),
+              onWebViewCreated: (c) => _web = c,
+              onLoadStop: (c, _) async {
+                await _extractFromDom();
+              },
+              onLoadError: (c, _, code, msg) {
+                _pushLog("[web] load error code=$code msg=$msg");
+              },
+              onLoadHttpError: (c, _, statusCode, description) {
+                _pushLog("[web] http error code=$statusCode $description");
+              },
+              onLoadResource: (c, res) {
+                final u = res.url.toString();
+                if (u.contains("pbs.twimg.com/media/")) {
+                  _imageUrls.add(_pbsToOrig(u));
+                }
+                if (u.contains("video.twimg.com/")) {
+                  final k = _videoGroupKey(u);
+                  final g = _videoUrls.putIfAbsent(k, () => {"mp4": <String>{}, "m3u8": <String>{}});
+                  if (u.contains(".m3u8")) {
+                    g["m3u8"]!.add(u);
+                  } else if (u.contains(".mp4")) {
+                    g["mp4"]!.add(u);
+                  }
+                }
+              },
+            ),
+          ),
+          SizedBox(
+            height: 180,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              children: [
+                for (final s in _log.reversed.take(12))
+                  Text(
+                    s,
+                    style: const TextStyle(fontFamily: "monospace", fontSize: 11),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.refresh),
+        label: const Text("刷新提取"),
+        onPressed: _busy ? null : _extractFromDom,
+      ),
+    );
+  }
+
+  Future<void> _extractFromDom() async {
+    final c = _web;
+    if (c == null) return;
+    try {
+      final js = """
+(() => {
+  const art = document.querySelector('article');
+  if (!art) return JSON.stringify({ ok:false, err:'no-article' });
+  const timeEl = art.querySelector('time');
+  const dt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
+  const textNodes = Array.from(art.querySelectorAll('div[data-testid="tweetText"], div[lang]'));
+  const parts = [];
+  for (const n of textNodes) {
+    const t = (n.innerText || '').trim();
+    if (t && parts.indexOf(t) < 0) parts.push(t);
+  }
+  const imgs = Array.from(art.querySelectorAll('img'))
+    .map(i => (i.getAttribute('src') || '').trim())
+    .filter(s => s.includes('pbs.twimg.com/media/'));
+  return JSON.stringify({ ok:true, dt, text: parts.join('\\n'), imgs });
+})()
+""";
+      final raw = await c.evaluateJavascript(source: js);
+      final m = jsonDecode(raw.toString());
+      if (m is Map && (m["ok"] == true)) {
+        final dt = (m["dt"] ?? "").toString();
+        final text = (m["text"] ?? "").toString();
+        final imgs = (m["imgs"] is List) ? (m["imgs"] as List) : const [];
+        setState(() {
+          if (dt.isNotEmpty) _dtUtc = dt;
+          if (text.isNotEmpty) _text = text;
+          for (final u in imgs) {
+            _imageUrls.add(_pbsToOrig(u.toString()));
+          }
+        });
+        _pushLog("[extract] dt=${_dtUtc.isEmpty ? '(none)' : _dtUtc} text=${_text.length} imgs=${imgs.length}");
+      } else {
+        _pushLog("[extract] failed: ${m["err"] ?? "unknown"}");
+      }
+    } catch (e) {
+      _pushLog("[extract] error: $e");
+    }
+  }
+
+  Future<Map<String, String>> _headersWithCookies() async {
+    final headers = <String, String>{
+      "User-Agent":
+          "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
+      "Referer": "https://x.com/",
+    };
+    try {
+      final cm = CookieManager.instance();
+      final cookies = await cm.getCookies(url: WebUri("https://x.com/"));
+      if (cookies.isNotEmpty) {
+        headers["Cookie"] = cookies.map((c) => "${c.name}=${c.value}").join("; ");
+      }
+    } catch (_) {}
+    return headers;
+  }
+
+  Future<void> _saveAll() async {
+    if (_busy) return;
+    if (_tweetId.isEmpty || _handle.isEmpty) {
+      _pushLog("[save] URL 解析失败");
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final base = Directory(widget.baseDir);
+      final dtp = _parseIso(_dtUtc) ?? DateTime.now().toUtc();
+      final yyyy = dtp.toUtc().year.toString().padLeft(4, "0");
+      final ym = "${dtp.toUtc().year.toString().padLeft(4, "0")}-${dtp.toUtc().month.toString().padLeft(2, "0")}";
+      final stamp =
+          "${dtp.toUtc().year.toString().padLeft(4, "0")}${dtp.toUtc().month.toString().padLeft(2, "0")}${dtp.toUtc().day.toString().padLeft(2, "0")}T${dtp.toUtc().hour.toString().padLeft(2, "0")}${dtp.toUtc().minute.toString().padLeft(2, "0")}${dtp.toUtc().second.toString().padLeft(2, "0")}Z";
+      final tweetDir = Directory(p.join(
+        base.path,
+        "x_media_ci",
+        "accounts",
+        _handle,
+        "tweets",
+        yyyy,
+        ym,
+        "${stamp}_$_tweetId",
+      ));
+      final imagesDir = Directory(p.join(tweetDir.path, "media", "images"));
+      final videoDir = Directory(p.join(tweetDir.path, "media", "video"));
+      final rawDir = Directory(p.join(tweetDir.path, "media", "raw"));
+      final exportsDir = Directory(p.join(tweetDir.path, "exports"));
+      await imagesDir.create(recursive: true);
+      await videoDir.create(recursive: true);
+      await rawDir.create(recursive: true);
+      await exportsDir.create(recursive: true);
+
+      _pushLog("[save] dir=${tweetDir.path}");
+
+      final headers = await _headersWithCookies();
+      final media = <Map<String, dynamic>>[];
+
+      var imgIdx = 1;
+      final imgList = _imageUrls.toList()..sort();
+      for (final u in imgList) {
+        final mid = _mediaIdFromUrl(u) ?? "img$imgIdx";
+        final ext = _imgExt(u);
+        final fname = "${imgIdx.toString().padLeft(2, "0")}_$mid$ext";
+        final out = File(p.join(imagesDir.path, fname));
+        try {
+          await _downloadToFile(u, out, headers: headers);
+          media.add({
+            "type": "image",
+            "mime": "image/${ext.replaceFirst('.', '')}",
+            "file": fname,
+            "source_url": u,
+          });
+          _pushLog("[img] ok $fname (${out.lengthSync()})");
+          imgIdx += 1;
+        } catch (e) {
+          await File(p.join(rawDir.path, "image_${imgIdx.toString().padLeft(2, "0")}_error.txt"))
+              .writeAsString(e.toString());
+          _pushLog("[img] fail $e");
+          imgIdx += 1;
+        }
+      }
+
+      final videosJson = <String, dynamic>{};
+      final keys = _videoUrls.keys.toList()..sort();
+      for (final k in keys) {
+        final g = _videoUrls[k]!;
+        videosJson[k] = {
+          "mp4": g["mp4"]!.toList()..sort(),
+          "m3u8": g["m3u8"]!.toList()..sort(),
+        };
+      }
+      await File(p.join(rawDir.path, "video_urls.json"))
+          .writeAsString(const JsonEncoder.withIndent("  ").convert(videosJson));
+
+      var vIdx = 1;
+      for (final k in keys.take(6)) {
+        final g = _videoUrls[k]!;
+        final mp4Urls = g["mp4"]!.toList();
+        final m3u8Urls = g["m3u8"]!.toList();
+        final vname = "${_tweetId}_video_${vIdx.toString().padLeft(2, "0")}.mp4";
+        final out = File(p.join(videoDir.path, vname));
+
+        final bestMp4 = _pickBestMp4(mp4Urls.where((u) => u.contains("/vid/") && !u.contains("/aud/")).toList());
+        try {
+          if (bestMp4 != null) {
+            await _downloadToFile(bestMp4, out, headers: headers);
+            media.add({
+              "type": "video",
+              "mime": "video/mp4",
+              "file": vname,
+              "source_url": bestMp4,
+            });
+            _pushLog("[vid] ok mp4 $vname (${out.lengthSync()})");
+          } else if (m3u8Urls.isNotEmpty) {
+            final chosen = await _pickBestM3u8(m3u8Urls, headers: headers) ?? m3u8Urls.first;
+            await File(p.join(rawDir.path, "video_m3u8_chosen_${vIdx.toString().padLeft(2, "0")}.txt"))
+                .writeAsString(chosen);
+            final ok = await _downloadHlsToFile(chosen, out, headers: headers);
+            if (!ok) {
+              throw Exception("HLS 下载失败（可能需要更强的解复用/转码）");
+            }
+            media.add({
+              "type": "video",
+              "mime": "video/mp4",
+              "file": vname,
+              "source_url": chosen,
+              "derived_from": "m3u8",
+            });
+            _pushLog("[vid] ok hls $vname (${out.lengthSync()})");
+          } else {
+            _pushLog("[vid] no urls for group=$k");
+          }
+        } catch (e) {
+          await File(p.join(rawDir.path, "video_error_${vIdx.toString().padLeft(2, "0")}.txt"))
+              .writeAsString(e.toString());
+          _pushLog("[vid] fail $e");
+        }
+        vIdx += 1;
+      }
+
+      final meta = <String, dynamic>{
+        "source": "x.com",
+        "ci_version": "1.0",
+        "tweet_id": _tweetId,
+        "tweet_url": _url,
+        "author_handle": _handle,
+        "datetime_utc": _dtUtc.isEmpty ? dtp.toUtc().toIso8601String() : _dtUtc,
+        "datetime_beijing": _toBeijingIso(dtp),
+        "fetched_at": DateTime.now().toUtc().toIso8601String().split("T").first,
+        "text": _text,
+        "media": media,
+        "exports": [],
+        "note": "fetched on Android (WebView capture).",
+      };
+      await File(p.join(tweetDir.path, "tweet.json"))
+          .writeAsString(const JsonEncoder.withIndent("  ").convert(meta));
+
+      final extract = _buildExtract(meta);
+      final extractPath = p.join(exportsDir.path, "article_${p.basename(tweetDir.path)}_extract.json");
+      await File(extractPath).writeAsString(const JsonEncoder.withIndent("  ").convert(extract));
+
+      final mdPath = p.join(exportsDir.path, "article_${p.basename(tweetDir.path)}_full.md");
+      await File(mdPath).writeAsString(_renderMarkdown(extract));
+
+      final pdfPath = p.join(exportsDir.path, "article_${p.basename(tweetDir.path)}_full.pdf");
+      await _writePdf(
+        pdfPath,
+        title: (extract["title"] ?? "X Article").toString(),
+        url: (extract["url"] ?? "").toString(),
+        author: (extract["author_handle"] ?? "").toString(),
+        dtUtc: (extract["datetime_utc"] ?? "").toString(),
+        text: _text,
+        images: imagesDir,
+      );
+
+      _pushLog("[done] md/pdf ok");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("完成：${tweetDir.path}")),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+}
+
+(String, String) _parseTweetUrl(String url) {
+  final re = RegExp(r"^https?://(x\.com|twitter\.com)/([^/]+)/status/(\d+)");
+  final m = re.firstMatch(url.trim());
+  if (m == null) return ("", "");
+  return (m.group(2) ?? "", m.group(3) ?? "");
+}
+
+DateTime? _parseIso(String s) {
+  if (s.trim().isEmpty) return null;
+  try {
+    return DateTime.parse(s).toUtc();
+  } catch (_) {
+    return null;
+  }
+}
+
+String _toBeijingIso(DateTime dtUtc) {
+  final bj = dtUtc.toUtc().add(const Duration(hours: 8));
+  final y = bj.year.toString().padLeft(4, "0");
+  final m = bj.month.toString().padLeft(2, "0");
+  final d = bj.day.toString().padLeft(2, "0");
+  final hh = bj.hour.toString().padLeft(2, "0");
+  final mm = bj.minute.toString().padLeft(2, "0");
+  final ss = bj.second.toString().padLeft(2, "0");
+  return "$y-$m-$d" "T$hh:$mm:$ss+08:00";
+}
+
+String _pbsToOrig(String url) {
+  try {
+    final u = Uri.parse(url);
+    if (!u.host.contains("pbs.twimg.com")) return url;
+    final q = Map<String, String>.from(u.queryParameters);
+    q["name"] = "orig";
+    return u.replace(queryParameters: q).toString();
+  } catch (_) {
+    return url;
+  }
+}
+
+String? _mediaIdFromUrl(String url) {
+  final m = RegExp(r"/media/([^?]+)").firstMatch(url);
+  if (m == null) return null;
+  final raw = m.group(1) ?? "";
+  final base = raw.split("/").last;
+  final stem = base.split(".").first;
+  return stem.replaceAll(RegExp(r"[^a-zA-Z0-9_-]+"), "_");
+}
+
+String _imgExt(String url) {
+  try {
+    final u = Uri.parse(url);
+    final fmt = u.queryParameters["format"];
+    if (fmt != null && fmt.isNotEmpty) return ".${fmt.toLowerCase()}";
+    final pathExt = p.extension(u.path);
+    if (pathExt.isNotEmpty) return pathExt.toLowerCase();
+  } catch (_) {}
+  return ".jpg";
+}
+
+String _videoGroupKey(String url) {
+  for (final pat in [
+    RegExp(r"/amplify_video/(\d+)/"),
+    RegExp(r"/ext_tw_video/(\d+)/"),
+    RegExp(r"/tweet_video/(\d+)/"),
+  ]) {
+    final m = pat.firstMatch(url);
+    if (m != null) return m.group(1) ?? url;
+  }
+  return url.split("?").first;
+}
+
+String? _pickBestMp4(List<String> urls) {
+  String? best;
+  var bestArea = -1;
+  for (final u in urls) {
+    final m = RegExp(r"/vid/(\\d+)x(\\d+)/").firstMatch(u);
+    var area = 0;
+    if (m != null) {
+      area = int.tryParse(m.group(1) ?? "0")! * int.tryParse(m.group(2) ?? "0")!;
+    }
+    if (area > bestArea) {
+      bestArea = area;
+      best = u;
+    }
+  }
+  return best ?? (urls.isNotEmpty ? urls.first : null);
+}
+
+Future<void> _downloadToFile(String url, File out, {required Map<String, String> headers}) async {
+  final resp = await http.get(Uri.parse(url), headers: headers);
+  if (resp.statusCode >= 400) {
+    throw Exception("HTTP ${resp.statusCode} for $url");
+  }
+  await out.parent.create(recursive: true);
+  await out.writeAsBytes(resp.bodyBytes);
+}
+
+Future<String?> _pickBestM3u8(List<String> urls, {required Map<String, String> headers}) async {
+  (int, int, String)? best;
+  for (final u in urls) {
+    String txt;
+    try {
+      final resp = await http.get(Uri.parse(u), headers: headers);
+      if (resp.statusCode >= 400) continue;
+      txt = utf8.decode(resp.bodyBytes, allowMalformed: true);
+    } catch (_) {
+      continue;
+    }
+    if (!txt.contains("#EXTM3U")) continue;
+    if (txt.contains("#EXT-X-STREAM-INF")) {
+      final lines = txt.split("\n").map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      for (var i = 0; i < lines.length; i++) {
+        final ln = lines[i];
+        if (!ln.startsWith("#EXT-X-STREAM-INF:")) continue;
+        final attrs = ln.substring("#EXT-X-STREAM-INF:".length);
+        final bw = int.tryParse(RegExp(r"BANDWIDTH=(\\d+)").firstMatch(attrs)?.group(1) ?? "") ?? 0;
+        final resM = RegExp(r"RESOLUTION=(\\d+)x(\\d+)").firstMatch(attrs);
+        final area = resM == null
+            ? 0
+            : (int.tryParse(resM.group(1) ?? "0") ?? 0) * (int.tryParse(resM.group(2) ?? "0") ?? 0);
+        var j = i + 1;
+        while (j < lines.length && lines[j].startsWith("#")) {
+          j += 1;
+        }
+        if (j >= lines.length) continue;
+        final variant = Uri.parse(u).resolve(lines[j]).toString();
+        final cand = (area, bw, variant);
+        if (best == null || cand.$1 > best.$1 || (cand.$1 == best.$1 && cand.$2 > best.$2)) {
+          best = cand;
+        }
+      }
+    } else {
+      final cand = (0, 0, u);
+      if (best == null) best = cand;
+    }
+  }
+  return best?.$3;
+}
+
+Future<bool> _downloadHlsToFile(String m3u8Url, File out, {required Map<String, String> headers}) async {
+  final resp = await http.get(Uri.parse(m3u8Url), headers: headers);
+  if (resp.statusCode >= 400) return false;
+  final txt = utf8.decode(resp.bodyBytes, allowMalformed: true);
+  if (!txt.contains("#EXTM3U")) return false;
+  final lines = txt.split("\n").map((e) => e.trim()).toList();
+  String? mapUrl;
+  final mapM = RegExp(r'#EXT-X-MAP:URI="([^"]+)"').firstMatch(txt);
+  if (mapM != null) {
+    mapUrl = Uri.parse(m3u8Url).resolve(mapM.group(1)!).toString();
+  }
+  final segs = <String>[];
+  for (final ln in lines) {
+    if (ln.isEmpty || ln.startsWith("#")) continue;
+    segs.add(Uri.parse(m3u8Url).resolve(ln).toString());
+  }
+  if (segs.isEmpty) return false;
+  await out.parent.create(recursive: true);
+  final sink = out.openWrite();
+  try {
+    if (mapUrl != null) {
+      final r0 = await http.get(Uri.parse(mapUrl), headers: headers);
+      if (r0.statusCode >= 400) return false;
+      sink.add(r0.bodyBytes);
+    }
+    for (final s in segs) {
+      final r = await http.get(Uri.parse(s), headers: headers);
+      if (r.statusCode >= 400) return false;
+      sink.add(r.bodyBytes);
+    }
+  } finally {
+    await sink.close();
+  }
+  return out.lengthSync() > 200 * 1024;
+}
+
+Map<String, dynamic> _buildExtract(Map<String, dynamic> meta) {
+  final text = (meta["text"] ?? "").toString();
+  final nodes = <Map<String, dynamic>>[];
+  if (text.isNotEmpty) {
+    for (final para in text.split("\n\n")) {
+      final t = para.trim();
+      if (t.isNotEmpty) nodes.add({"type": "p", "text": t});
+    }
+  }
+  final media = (meta["media"] is List) ? (meta["media"] as List) : const [];
+  for (final m in media) {
+    if (m is Map && m["type"] == "image" && m["source_url"] != null) {
+      nodes.add({"type": "img", "src": m["source_url"].toString()});
+    }
+  }
+  return {
+    "title": (text.isNotEmpty ? text.split("\n").first : "Tweet ${meta["tweet_id"] ?? ""}"),
+    "url": meta["tweet_url"] ?? "",
+    "author_handle": meta["author_handle"] ?? "",
+    "datetime_utc": meta["datetime_utc"] ?? "",
+    "nodes": nodes,
+  };
+}
+
+String _renderMarkdown(Map<String, dynamic> extract) {
+  final title = (extract["title"] ?? "X Article").toString();
+  final url = (extract["url"] ?? "").toString();
+  final author = (extract["author_handle"] ?? "").toString();
+  final dt = (extract["datetime_utc"] ?? "").toString();
+  final buf = StringBuffer();
+  buf.writeln("# $title");
+  buf.writeln();
+  buf.writeln("- 作者：$author");
+  buf.writeln("- 文章链接：$url");
+  buf.writeln("- 时间（UTC）：$dt");
+  buf.writeln();
+  buf.writeln("---");
+  buf.writeln();
+  final nodes = (extract["nodes"] is List) ? (extract["nodes"] as List) : const [];
+  for (final n in nodes) {
+    if (n is! Map) continue;
+    final t = (n["type"] ?? "").toString();
+    if (t == "p") {
+      final s = (n["text"] ?? "").toString().trim();
+      if (s.isNotEmpty) {
+        buf.writeln(s);
+        buf.writeln();
+      }
+    } else if (t == "img") {
+      final src = (n["src"] ?? "").toString();
+      if (src.isNotEmpty) {
+        buf.writeln("![]($src)");
+        buf.writeln();
+      }
+    }
+  }
+  return buf.toString();
+}
+
+Future<void> _writePdf(
+  String outPath, {
+  required String title,
+  required String url,
+  required String author,
+  required String dtUtc,
+  required String text,
+  required Directory images,
+}) async {
+  final doc = pw.Document();
+  final imgs = images
+      .listSync()
+      .whereType<File>()
+      .where((f) => f.path.toLowerCase().endsWith(".jpg") || f.path.toLowerCase().endsWith(".png") || f.path.toLowerCase().endsWith(".jpeg"))
+      .toList()
+    ..sort((a, b) => a.path.compareTo(b.path));
+  doc.addPage(
+    pw.MultiPage(
+      build: (ctx) {
+        final out = <pw.Widget>[];
+        out.add(pw.Text(title, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)));
+        out.add(pw.SizedBox(height: 8));
+        out.add(pw.Text("作者：$author"));
+        out.add(pw.Text("链接：$url"));
+        out.add(pw.Text("时间（UTC）：$dtUtc"));
+        out.add(pw.SizedBox(height: 12));
+        if (text.trim().isNotEmpty) {
+          out.add(pw.Text(text));
+          out.add(pw.SizedBox(height: 12));
+        }
+        for (final f in imgs) {
+          try {
+            final bytes = f.readAsBytesSync();
+            final img = pw.MemoryImage(bytes);
+            out.add(pw.Image(img));
+            out.add(pw.SizedBox(height: 10));
+          } catch (_) {}
+        }
+        return out;
+      },
+    ),
+  );
+  final file = File(outPath);
+  await file.parent.create(recursive: true);
+  await file.writeAsBytes(await doc.save());
 }
