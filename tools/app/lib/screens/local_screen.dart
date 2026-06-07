@@ -108,6 +108,65 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
   final _imageUrls = <String>{};
   final _videoUrls = <String, Map<String, Set<String>>>{};
 
+  Future<void> _debugPageBasics() async {
+    final c = _web;
+    if (c == null) return;
+    try {
+      final raw = await c.evaluateJavascript(
+        source:
+            "JSON.stringify({href: location.href, title: document.title || '', ready: document.readyState || '', articles: (document.querySelectorAll('article') || []).length})",
+      );
+      final m = jsonDecode(raw.toString());
+      if (m is Map) {
+        final href = (m["href"] ?? "").toString();
+        final ready = (m["ready"] ?? "").toString();
+        final articles = (m["articles"] ?? "").toString();
+        final t0 = (m["title"] ?? "").toString().trim();
+        final title = t0.length > 60 ? "${t0.substring(0, 60)}…" : t0;
+        _pushLog("[page] ready=$ready articles=$articles title=$title");
+        if (href.isNotEmpty) _pushLog("[page] url=$href");
+      }
+    } catch (e) {
+      _pushLog("[page] error: $e");
+    }
+  }
+
+  void _observeUrl(String url) {
+    if (url.contains("pbs.twimg.com/media/") ||
+        url.contains("pbs.twimg.com/tweet_video_thumb/") ||
+        url.contains("pbs.twimg.com/ext_tw_video_thumb/")) {
+      final norm = _pbsToOrig(url);
+      final before = _imageUrls.length;
+      _imageUrls.add(norm);
+      if (_imageUrls.length != before) {
+        if (_imageUrls.length <= 2) {
+          _pushLog("[img] + ${_imageUrls.length} $norm");
+        } else if (_imageUrls.length == 3) {
+          _pushLog("[img] + more… total=${_imageUrls.length}");
+        } else {
+          setState(() {});
+        }
+      }
+      return;
+    }
+    if (url.contains("video.twimg.com/")) {
+      final k = _videoGroupKey(url);
+      final g = _videoUrls.putIfAbsent(k, () => {"mp4": <String>{}, "m3u8": <String>{}});
+      final before = (g["mp4"]!.length + g["m3u8"]!.length);
+      if (url.contains(".m3u8")) {
+        g["m3u8"]!.add(url);
+      } else if (url.contains(".mp4")) {
+        g["mp4"]!.add(url);
+      }
+      final after = (g["mp4"]!.length + g["m3u8"]!.length);
+      if (after != before && (g["mp4"]!.length + g["m3u8"]!.length) == 1) {
+        _pushLog("[vid] + group=$k");
+      } else if (after != before) {
+        setState(() {});
+      }
+    }
+  }
+
   void _pushLog(String s) {
     setState(() {
       _log.add(s);
@@ -168,15 +227,26 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
               initialUrlRequest: URLRequest(url: WebUri("https://x.com/")),
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: true,
+                domStorageEnabled: true,
                 mediaPlaybackRequiresUserGesture: true,
                 allowsInlineMediaPlayback: true,
                 sharedCookiesEnabled: true,
+                thirdPartyCookiesEnabled: true,
+                useShouldInterceptRequest: true,
+                userAgent:
+                    "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
               ),
               onWebViewCreated: (c) async {
                 _web = c;
+                _pushLog("[web] created");
                 await _prepareAndLoad();
               },
+              onLoadStart: (c, u) {
+                final s = u?.toString() ?? "";
+                if (s.isNotEmpty) _pushLog("[web] start $s");
+              },
               onLoadStop: (c, _) async {
+                await _debugPageBasics();
                 await _extractFromDom();
               },
               onLoadError: (c, _, code, msg) {
@@ -186,19 +256,14 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
                 _pushLog("[web] http error code=$statusCode $description");
               },
               onLoadResource: (c, res) {
-                final u = res.url.toString();
-                if (u.contains("pbs.twimg.com/media/")) {
-                  _imageUrls.add(_pbsToOrig(u));
+                _observeUrl(res.url.toString());
+              },
+              shouldInterceptRequest: (c, req) async {
+                final u = req.url?.toString() ?? "";
+                if (u.isNotEmpty) {
+                  _observeUrl(u);
                 }
-                if (u.contains("video.twimg.com/")) {
-                  final k = _videoGroupKey(u);
-                  final g = _videoUrls.putIfAbsent(k, () => {"mp4": <String>{}, "m3u8": <String>{}});
-                  if (u.contains(".m3u8")) {
-                    g["m3u8"]!.add(u);
-                  } else if (u.contains(".mp4")) {
-                    g["mp4"]!.add(u);
-                  }
-                }
+                return null;
               },
             ),
           ),
@@ -267,18 +332,33 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
 
   Future<void> _extractFromDom() async {
     final c = _web;
-    if (c == null) return;
+    if (c == null) {
+      _pushLog("[extract] webview not ready");
+      return;
+    }
     try {
       final js = """
 (() => {
-  const art = document.querySelector('article');
+  const tid = ${jsonEncode(_tweetId)};
+  const arts = Array.from(document.querySelectorAll('article'));
+  let art = null;
+  if (tid) {
+    for (const a of arts) {
+      const has = Array.from(a.querySelectorAll('a[href*="/status/"]'))
+        .some(x => (x.getAttribute('href') || '').includes('/status/' + tid));
+      if (has) { art = a; break; }
+    }
+  }
+  if (!art) art = arts.length ? arts[0] : null;
   if (!art) return JSON.stringify({ ok:false, err:'no-article' });
   let handle = '';
-  const links = Array.from(art.querySelectorAll('a[href^="/"]'))
+  const links = Array.from(art.querySelectorAll('a[href*="/status/"]'))
     .map(a => (a.getAttribute('href') || '').trim())
     .filter(h => h.includes('/status/'));
   for (const h of links) {
-    const m = h.match(/^\\/([^/]+)\\/status\\//);
+    const m = tid
+      ? h.match(new RegExp('^/([^/]+)/status/' + tid))
+      : h.match(/^\\/([^/]+)\\/status\\//);
     if (m && m[1] && m[1] !== 'i') { handle = m[1]; break; }
   }
   const timeEl = art.querySelector('time');
@@ -291,7 +371,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
   }
   const imgs = Array.from(art.querySelectorAll('img'))
     .map(i => (i.getAttribute('src') || '').trim())
-    .filter(s => s.includes('pbs.twimg.com/media/'));
+    .filter(s => s.includes('pbs.twimg.com/media/') || s.includes('pbs.twimg.com/tweet_video_thumb/') || s.includes('pbs.twimg.com/ext_tw_video_thumb/'));
   return JSON.stringify({ ok:true, dt, handle, text: parts.join('\\n'), imgs });
 })()
 """;
@@ -313,6 +393,43 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
         _pushLog("[extract] dt=${_dtUtc.isEmpty ? '(none)' : _dtUtc} text=${_text.length} imgs=${imgs.length}");
       } else {
         _pushLog("[extract] failed: ${m["err"] ?? "unknown"}");
+      }
+
+      final js2 = """
+(() => {
+  const perf = (performance.getEntriesByType('resource') || [])
+    .map(e => (e && e.name) ? String(e.name) : '')
+    .filter(s => s && s.length > 0);
+  const hits = [];
+  const html = document.documentElement ? document.documentElement.outerHTML : '';
+  const rx = /(https?:)?\\/\\/(?:pbs\\.twimg\\.com\\/(?:media|tweet_video_thumb|ext_tw_video_thumb)\\/[^"'<\\s]+|video\\.twimg\\.com\\/[^"'<\\s]+)/g;
+  let m;
+  while ((m = rx.exec(html)) !== null) {
+    let u = m[0] || '';
+    if (u.startsWith('//')) u = 'https:' + u;
+    hits.push(u);
+    if (hits.length >= 200) break;
+  }
+  return JSON.stringify({ perf: perf.slice(0, 600), hits });
+})()
+""";
+      final raw2 = await c.evaluateJavascript(source: js2);
+      final m2 = jsonDecode(raw2.toString());
+      if (m2 is Map) {
+        final perf = (m2["perf"] is List) ? (m2["perf"] as List) : const [];
+        final hits = (m2["hits"] is List) ? (m2["hits"] as List) : const [];
+        var added = 0;
+        for (final u in [...perf, ...hits]) {
+          final s = u.toString();
+          final beforeImg = _imageUrls.length;
+          final beforeVid = _videoUrls.length;
+          _observeUrl(s);
+          if (_imageUrls.length != beforeImg || _videoUrls.length != beforeVid) {
+            added += 1;
+          }
+          if (added >= 30) break;
+        }
+        _pushLog("[scan] perf=${perf.length} hits=${hits.length} added=$added");
       }
     } catch (e) {
       _pushLog("[extract] error: $e");
