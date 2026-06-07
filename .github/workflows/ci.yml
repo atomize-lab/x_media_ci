@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-validate:
+    name: lint + validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime deps
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r tools/requirements.txt
+          python -m pip install pyflakes
+
+      - name: pyflakes
+        shell: bash
+        working-directory: tools
+        run: python x_media_ci.py lint
+
+      - name: validate sample fixtures
+        shell: bash
+        working-directory: tools
+        run: |
+          if [ -d "../accounts" ]; then
+            python x_media_ci.py validate --root "../accounts"
+          else
+            echo "No ../accounts dir in this checkout; skipping validate"
+          fi
