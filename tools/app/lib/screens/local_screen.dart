@@ -98,6 +98,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
   final _log = <String>[];
   InAppWebViewController? _web;
   bool _busy = false;
+  Key _webKey = UniqueKey();
 
   String _url = "";
   String _handle = "";
@@ -107,6 +108,14 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
 
   final _imageUrls = <String>{};
   final _videoUrls = <String, Map<String, Set<String>>>{};
+
+  void _recreateWebView({String reason = ""}) {
+    setState(() {
+      _web = null;
+      _webKey = UniqueKey();
+    });
+    _pushLog("[web] recreate${reason.isEmpty ? '' : ' ($reason)'}");
+  }
 
   Future<void> _debugPageBasics() async {
     final c = _web;
@@ -216,7 +225,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "images=${_imageUrls.length}  videos=${_videoUrls.length}  busy=$_busy",
+                  "web=${_web != null}  images=${_imageUrls.length}  videos=${_videoUrls.length}  busy=$_busy",
                   style: const TextStyle(fontFamily: "monospace", fontSize: 12),
                 ),
               ],
@@ -224,6 +233,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
           ),
           Expanded(
             child: InAppWebView(
+              key: _webKey,
               initialUrlRequest: URLRequest(url: WebUri("https://x.com/")),
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: true,
@@ -285,7 +295,15 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.refresh),
         label: const Text("刷新提取"),
-        onPressed: _busy ? null : _extractFromDom,
+        onPressed: _busy
+            ? null
+            : () async {
+                if (_web == null) {
+                  _recreateWebView(reason: "controller is null");
+                  return;
+                }
+                await _extractFromDom();
+              },
       ),
     );
   }
@@ -334,6 +352,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
     final c = _web;
     if (c == null) {
       _pushLog("[extract] webview not ready");
+      _recreateWebView(reason: "extract called before created");
       return;
     }
     try {
