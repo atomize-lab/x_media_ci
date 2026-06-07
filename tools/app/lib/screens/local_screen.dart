@@ -30,7 +30,12 @@ class _LocalScreenState extends State<LocalScreen> {
 
   Future<void> _resolveDocs() async {
     try {
-      final d = await getApplicationDocumentsDirectory();
+      Directory d;
+      if (Platform.isAndroid) {
+        d = (await getExternalStorageDirectory()) ?? await getApplicationDocumentsDirectory();
+      } else {
+        d = await getApplicationDocumentsDirectory();
+      }
       if (!mounted) return;
       setState(() => _appDocsDir = d.path);
     } catch (_) {
@@ -949,7 +954,7 @@ Future<void> _writePdf(
           try {
             final bytes = f.readAsBytesSync();
             final img = pw.MemoryImage(bytes);
-            out.add(pw.Image(img));
+            out.add(pw.Center(child: pw.Image(img, height: 520, fit: pw.BoxFit.contain)));
             out.add(pw.SizedBox(height: 10));
           } catch (_) {}
         }
