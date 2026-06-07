@@ -180,6 +180,17 @@ jobs:
           
           changed = [str(p) for p in targets if patch(p)]
           print("patched:", changed)
+
+          manifest = root / "app" / "src" / "main" / "AndroidManifest.xml"
+          if manifest.exists():
+              s = manifest.read_text(encoding="utf-8", errors="replace")
+              if "android.permission.INTERNET" not in s:
+                  m = re.search(r"(<manifest[^>]*>)", s)
+                  if m:
+                      insert = m.group(1) + "\n    <uses-permission android:name=\"android.permission.INTERNET\"/>"
+                      s2 = s.replace(m.group(1), insert, 1)
+                      manifest.write_text(s2, encoding="utf-8")
+                      print("patched:", str(manifest))
           PY
       - name: Show Kotlin plugin version (debug)
         working-directory: tools/app
