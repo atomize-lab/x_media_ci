@@ -100,9 +100,9 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
   InAppWebViewController? _web;
   bool _busy = false;
   Key _webKey = UniqueKey();
-  FlutterExceptionHandler? _prevFlutterOnError;
-  FlutterExceptionHandler? _installedFlutterOnError;
-  ui.PlatformDispatcherExceptionHandler? _prevPlatformOnError;
+  void Function(FlutterErrorDetails details)? _prevFlutterOnError;
+  void Function(FlutterErrorDetails details)? _installedFlutterOnError;
+  bool Function(Object error, StackTrace stack)? _prevPlatformOnError;
 
   String _url = "";
   String _handle = "";
