@@ -123,10 +123,10 @@ jobs:
               s = p.read_text(encoding="utf-8", errors="replace")
               orig = s
               # Groovy: ext.kotlin_version = '1.7.10'
-              s = re.sub(r"(ext\\.kotlin_version\\s*=\\s*)'[^']+'", r"\\g<1>'1.9.22'", s)
-              s = re.sub(r"(ext\\.kotlin_version\\s*=\\s*)\"[^\"]+\"", r'\\g<1>"1.9.22"', s)
-              s = re.sub(r"(kotlin_version\\s*=\\s*)'[^']+'", r"\\g<1>'1.9.22'", s)
-              s = re.sub(r"(kotlin_version\\s*=\\s*)\"[^\"]+\"", r'\\g<1>"1.9.22"', s)
+              s = re.sub(r"(ext\.kotlin_version\s*=\s*)'[^']+'", r"\g<1>'1.9.22'", s)
+              s = re.sub(r'(ext\.kotlin_version\s*=\s*)"[^"]+"', r'\g<1>"1.9.22"', s)
+              s = re.sub(r"(kotlin_version\s*=\s*)'[^']+'", r"\g<1>'1.9.22'", s)
+              s = re.sub(r'(kotlin_version\s*=\s*)"[^"]+"', r'\g<1>"1.9.22"', s)
 
               # Groovy plugin DSL:
               #   id "org.jetbrains.kotlin.android" version "1.7.10" apply false
@@ -134,40 +134,40 @@ jobs:
               #   id 'org.jetbrains.kotlin.android' version "1.7.10"
               #   id 'org.jetbrains.kotlin.android' version '1.7.10'
               s = re.sub(
-                  r'(id\\s+"org\\.jetbrains\\.kotlin\\.android"\\s+version\\s+)(["\'])[0-9.]+\\2',
-                  r'\\g<1>"1.9.22"',
+                  r'(id\s+"org\.jetbrains\.kotlin\.android"\s+version\s+)(["\'])[0-9.]+\2',
+                  r'\g<1>"1.9.22"',
                   s,
               )
               s = re.sub(
-                  r"(id\\s+'org\\.jetbrains\\.kotlin\\.android'\\s+version\\s+)(['\"])[0-9.]+\\2",
-                  r"\\g<1>'1.9.22'",
+                  r"(id\s+'org\.jetbrains\.kotlin\.android'\s+version\s+)(['\"])[0-9.]+\2",
+                  r"\g<1>'1.9.22'",
                   s,
               )
 
               # Kotlin DSL: id("org.jetbrains.kotlin.android") version "1.7.10"
               s = re.sub(
-                  r'(id\\(\"org\\.jetbrains\\.kotlin\\.android\"\\)\\s+version\\s+)(["\'])[0-9.]+\\2',
-                  r'\\g<1>"1.9.22"',
+                  r'(id\("org\.jetbrains\.kotlin\.android"\)\s+version\s+)(["\'])[0-9.]+\2',
+                  r'\g<1>"1.9.22"',
                   s,
               )
               s = re.sub(
-                  r"(id\\('org\\.jetbrains\\.kotlin\\.android'\\)\\s+version\\s+)(['\"])[0-9.]+\\2",
-                  r"\\g<1>'1.9.22'",
+                  r"(id\('org\.jetbrains\.kotlin\.android'\)\s+version\s+)(['\"])[0-9.]+\2",
+                  r"\g<1>'1.9.22'",
                   s,
               )
 
               # Kotlin DSL shortcut: kotlin("android") version "1.7.10" / '1.7.10'
               s = re.sub(
-                  r'(kotlin\\(\"android\"\\)\\s+version\\s+)(["\'])[0-9.]+\\2',
-                  r'\\g<1>"1.9.22"',
+                  r'(kotlin\("android"\)\s+version\s+)(["\'])[0-9.]+\2',
+                  r'\g<1>"1.9.22"',
                   s,
               )
 
               # Legacy classpath:
               #   classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
               s = re.sub(
-                  r'(org\\.jetbrains\\.kotlin:kotlin-gradle-plugin:)[0-9.]+',
-                  r'\\g<1>1.9.22',
+                  r'(org\.jetbrains\.kotlin:kotlin-gradle-plugin:)[0-9.]+',
+                  r'\g<1>1.9.22',
                   s,
               )
               if s != orig:
@@ -191,8 +191,8 @@ jobs:
           if [ -f android/build.gradle ]; then grep -n "kotlin" android/build.gradle || true; fi
           echo "---- assert kotlin plugin is 1.9.22 ----"
           if [ -f android/settings.gradle ]; then
-            grep -n 'org\\.jetbrains\\.kotlin\\.android' android/settings.gradle || true
-            grep -q 'org\\.jetbrains\\.kotlin\\.android\" version \"1\\.9\\.22\"' android/settings.gradle || {
+            grep -n 'org\.jetbrains\.kotlin\.android' android/settings.gradle || true
+            grep -q 'org\.jetbrains\.kotlin\.android.*1\.9\.22' android/settings.gradle || {
               echo "ERROR: kotlin plugin version not patched to 1.9.22 in android/settings.gradle"
               exit 1
             }
