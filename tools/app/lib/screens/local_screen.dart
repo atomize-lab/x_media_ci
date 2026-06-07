@@ -617,7 +617,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       (int, String)? bestCandidate(List<String> urls) {
         (int, String)? best;
         for (final u in urls) {
-          final m = RegExp(r"/vid/(\d+)x(\d+)/").firstMatch(u);
+          final m = RegExp(r"/vid/(?:[a-zA-Z0-9_-]+/)?(\d+)x(\d+)/").firstMatch(u);
           final w = int.tryParse(m?.group(1) ?? "") ?? 0;
           final h = int.tryParse(m?.group(2) ?? "") ?? 0;
           final area = w * h;
@@ -632,7 +632,10 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       var anyM3u8 = false;
       for (final k in keys) {
         final g = _videoUrls[k]!;
-        final mp4Urls = g["mp4"]!.where((u) => u.contains("/vid/") && !u.contains("/aud/")).toList();
+        final mp4Urls = g["mp4"]!
+            .where((u) => u.contains(".mp4"))
+            .where((u) => u.contains("/vid/") && !u.contains("/aud/"))
+            .toList();
         final m3u8Urls = g["m3u8"]!.toList();
         if (m3u8Urls.isNotEmpty) anyM3u8 = true;
         final cand = bestCandidate(mp4Urls);
@@ -657,7 +660,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
           final vname = "${_tweetId}_video_${vIdx.toString().padLeft(2, "0")}.mp4";
           final out = File(p.join(videoDir.path, vname));
           try {
-            await _downloadToFile(bestMp4, out, headers: headers);
+            await _downloadToFile(bestMp4, out, headers: headers, validateMp4: true);
             media.add({
               "type": "video",
               "mime": "video/mp4",
@@ -808,13 +811,58 @@ String? _pickBestMp4(List<String> urls) {
   return best ?? (urls.isNotEmpty ? urls.first : null);
 }
 
-Future<void> _downloadToFile(String url, File out, {required Map<String, String> headers}) async {
-  final resp = await http.get(Uri.parse(url), headers: headers);
-  if (resp.statusCode >= 400) {
-    throw Exception("HTTP ${resp.statusCode} for $url");
+bool _looksLikeMp4(List<int> bytes) {
+  if (bytes.length < 12) return false;
+  final s = String.fromCharCodes(bytes.take(64));
+  if (s.startsWith("<!DOCTYPE") || s.startsWith("<html") || s.startsWith("<?xml")) return false;
+  if (bytes.length >= 8) {
+    final tag = String.fromCharCodes(bytes.sublist(4, 8));
+    if (tag == "ftyp") return true;
   }
-  await out.parent.create(recursive: true);
-  await out.writeAsBytes(resp.bodyBytes);
+  return false;
+}
+
+String _snippetText(List<int> bytes) {
+  final n = bytes.length > 280 ? 280 : bytes.length;
+  return utf8.decode(bytes.sublist(0, n), allowMalformed: true).replaceAll("\n", "\\n");
+}
+
+Future<void> _downloadToFile(
+  String url,
+  File out, {
+  required Map<String, String> headers,
+  bool validateMp4 = false,
+}) async {
+  final client = http.Client();
+  try {
+    final req = http.Request("GET", Uri.parse(url));
+    req.headers.addAll(headers);
+    if (validateMp4) {
+      req.headers["Accept"] = "*/*";
+    }
+    final streamed = await client.send(req);
+    final resp = await http.Response.fromStream(streamed);
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw Exception("HTTP ${resp.statusCode} for $url");
+    }
+    if (validateMp4) {
+      final ct = (resp.headers["content-type"] ?? "").toLowerCase();
+      final bytes = resp.bodyBytes;
+      if (ct.contains("text/html") || ct.contains("application/json")) {
+        throw Exception("Not mp4 (content-type=$ct) head=${_snippetText(bytes)}");
+      }
+      if (bytes.length < 64 * 1024) {
+        throw Exception("MP4 too small (${bytes.length} bytes) head=${_snippetText(bytes)}");
+      }
+      if (!_looksLikeMp4(bytes)) {
+        throw Exception("Not mp4 head=${_snippetText(bytes)}");
+      }
+    }
+    await out.parent.create(recursive: true);
+    await out.writeAsBytes(resp.bodyBytes);
+  } finally {
+    client.close();
+  }
 }
 
 Future<String?> _pickBestM3u8(List<String> urls, {required Map<String, String> headers}) async {
