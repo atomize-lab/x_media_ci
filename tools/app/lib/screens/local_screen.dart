@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import '../api/ci_api.dart';
 
@@ -99,6 +100,9 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
   InAppWebViewController? _web;
   bool _busy = false;
   Key _webKey = UniqueKey();
+  FlutterExceptionHandler? _prevFlutterOnError;
+  FlutterExceptionHandler? _installedFlutterOnError;
+  ui.PlatformDispatcherExceptionHandler? _prevPlatformOnError;
 
   String _url = "";
   String _handle = "";
@@ -192,12 +196,37 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
     final parsed = _parseTweetUrl(_url);
     _handle = parsed.$1;
     _tweetId = parsed.$2;
+    _prevFlutterOnError = FlutterError.onError;
+    _installedFlutterOnError = (details) {
+      final msg = details.exceptionAsString();
+      _pushLog("[err] $msg");
+      final lib = details.library ?? "";
+      if (lib.isNotEmpty) _pushLog("[err] lib=$lib");
+      final ctx = details.context?.toDescription() ?? "";
+      if (ctx.isNotEmpty) _pushLog("[err] ctx=$ctx");
+      _prevFlutterOnError?.call(details);
+    };
+    FlutterError.onError = _installedFlutterOnError;
+    _prevPlatformOnError = ui.PlatformDispatcher.instance.onError;
+    ui.PlatformDispatcher.instance.onError = (error, stack) {
+      _pushLog("[err] $error");
+      return _prevPlatformOnError?.call(error, stack) ?? false;
+    };
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
       if (_web == null) {
         _pushLog("[web] not created (possible missing/disabled Android System WebView or Chrome)");
       }
     });
+  }
+
+  @override
+  void dispose() {
+    if (FlutterError.onError == _installedFlutterOnError) {
+      FlutterError.onError = _prevFlutterOnError;
+    }
+    ui.PlatformDispatcher.instance.onError = _prevPlatformOnError;
+    super.dispose();
   }
 
   @override
