@@ -192,6 +192,12 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
     final parsed = _parseTweetUrl(_url);
     _handle = parsed.$1;
     _tweetId = parsed.$2;
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      if (_web == null) {
+        _pushLog("[web] not created (possible missing/disabled Android System WebView or Chrome)");
+      }
+    });
   }
 
   @override
