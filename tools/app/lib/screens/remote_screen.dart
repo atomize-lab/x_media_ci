@@ -86,7 +86,7 @@ class _RemoteScreenState extends State<RemoteScreen> {
             style: const TextStyle(fontFamily: "monospace")),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          initialValue: _op,
+          value: _op,
           decoration: const InputDecoration(labelText: "Operation"),
           items: const [
             DropdownMenuItem(value: "md", child: Text("md — generate .md")),

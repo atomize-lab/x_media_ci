@@ -102,6 +102,23 @@ jobs:
           flutter create . --project-name x_media_ci_app --platforms=android --overwrite
           git -C ../.. checkout -- tools/app/lib tools/app/pubspec.yaml tools/app/analysis_options.yaml
           flutter pub get
+      - name: Patch Android Kotlin version
+        working-directory: tools/app
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Some Flutter templates still use older Kotlin plugin versions, but
+          # modern plugins (e.g. shared_preferences_android) require Kotlin 1.9+.
+          if [ -f android/build.gradle ]; then
+            sed -i -E "s/(ext\\.kotlin_version\\s*=\\s*)'[^']+'/(\\1)'1.9.22'/g" android/build.gradle || true
+          fi
+          # Newer Gradle templates use plugin DSL in settings.gradle(.kts)
+          for f in android/settings.gradle android/settings.gradle.kts android/build.gradle.kts; do
+            if [ -f \"$f\" ]; then
+              sed -i -E \"s/(org\\.jetbrains\\.kotlin\\.android\\\"\\s+version\\s+\\\")([0-9.]+)(\\\")/\\11.9.22\\3/g\" \"$f\" || true
+              sed -i -E \"s/(kotlin\\(\\\"android\\\"\\)\\s+version\\s+\\\")([0-9.]+)(\\\")/\\11.9.22\\3/g\" \"$f\" || true
+            fi
+          done
       - name: Build release APK
         working-directory: tools/app
         run: flutter build apk --release
