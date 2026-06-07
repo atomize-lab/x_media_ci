@@ -117,6 +117,24 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
 
   final _imageUrls = <String>{};
   final _videoUrls = <String, Map<String, Set<String>>>{};
+  DateTime? _videoCaptureUntil;
+
+  bool get _videoCaptureActive =>
+      _videoCaptureUntil != null && DateTime.now().isBefore(_videoCaptureUntil!);
+
+  void _startVideoCaptureWindow() {
+    setState(() {
+      _videoUrls.clear();
+      _videoCaptureUntil = DateTime.now().add(const Duration(seconds: 18));
+    });
+    _pushLog("[cap] cleared videos; now tap Play once to let WebView request mp4 URLs");
+    Future.delayed(const Duration(seconds: 19), () {
+      if (!mounted) return;
+      if (_videoCaptureUntil != null && !_videoCaptureActive) {
+        _pushLog("[cap] done videos=${_videoUrls.length}");
+      }
+    });
+  }
 
   void _recreateWebView({String reason = ""}) {
     setState(() {
@@ -168,6 +186,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       return;
     }
     if (url.contains("video.twimg.com/")) {
+      if (!_videoCaptureActive) return;
       final k = _videoGroupKey(url);
       final g = _videoUrls.putIfAbsent(k, () => {"mp4": <String>{}, "m3u8": <String>{}});
       final before = (g["mp4"]!.length + g["m3u8"]!.length);
@@ -342,6 +361,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
                   _recreateWebView(reason: "controller is null");
                   return;
                 }
+                _startVideoCaptureWindow();
                 await _extractFromDom();
               },
       ),
@@ -594,17 +614,49 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
       await File(p.join(rawDir.path, "video_urls.json"))
           .writeAsString(const JsonEncoder.withIndent("  ").convert(videosJson));
 
-      var vIdx = 1;
-      for (final k in keys.take(6)) {
-        final g = _videoUrls[k]!;
-        final mp4Urls = g["mp4"]!.toList();
-        final m3u8Urls = g["m3u8"]!.toList();
-        final vname = "${_tweetId}_video_${vIdx.toString().padLeft(2, "0")}.mp4";
-        final out = File(p.join(videoDir.path, vname));
+      (int, String)? bestCandidate(List<String> urls) {
+        (int, String)? best;
+        for (final u in urls) {
+          final m = RegExp(r"/vid/(\d+)x(\d+)/").firstMatch(u);
+          final w = int.tryParse(m?.group(1) ?? "") ?? 0;
+          final h = int.tryParse(m?.group(2) ?? "") ?? 0;
+          final area = w * h;
+          if (best == null || area > best.$1) {
+            best = (area, u);
+          }
+        }
+        return best ?? (urls.isNotEmpty ? (0, urls.first) : null);
+      }
 
-        final bestMp4 = _pickBestMp4(mp4Urls.where((u) => u.contains("/vid/") && !u.contains("/aud/")).toList());
-        try {
-          if (bestMp4 != null) {
+      final ranked = <(int, String, String)>[];
+      var anyM3u8 = false;
+      for (final k in keys) {
+        final g = _videoUrls[k]!;
+        final mp4Urls = g["mp4"]!.where((u) => u.contains("/vid/") && !u.contains("/aud/")).toList();
+        final m3u8Urls = g["m3u8"]!.toList();
+        if (m3u8Urls.isNotEmpty) anyM3u8 = true;
+        final cand = bestCandidate(mp4Urls);
+        if (cand != null) {
+          ranked.add((cand.$1, k, cand.$2));
+        }
+      }
+      ranked.sort((a, b) => b.$1.compareTo(a.$1));
+
+      final chosen = ranked.take(3).toList();
+      if (chosen.isEmpty) {
+        _pushLog("[vid] no mp4 captured. Press 刷新提取, then tap Play once and Save again.");
+        if (anyM3u8) {
+          _pushLog("[vid] m3u8 exists but app does not remux it into playable mp4 on-device.");
+        }
+      } else {
+        var vIdx = 1;
+        for (final it in chosen) {
+          final area = it.$1;
+          final k = it.$2;
+          final bestMp4 = it.$3;
+          final vname = "${_tweetId}_video_${vIdx.toString().padLeft(2, "0")}.mp4";
+          final out = File(p.join(videoDir.path, vname));
+          try {
             await _downloadToFile(bestMp4, out, headers: headers);
             media.add({
               "type": "video",
@@ -612,32 +664,14 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
               "file": vname,
               "source_url": bestMp4,
             });
-            _pushLog("[vid] ok mp4 $vname (${out.lengthSync()})");
-          } else if (m3u8Urls.isNotEmpty) {
-            final chosen = await _pickBestM3u8(m3u8Urls, headers: headers) ?? m3u8Urls.first;
-            await File(p.join(rawDir.path, "video_m3u8_chosen_${vIdx.toString().padLeft(2, "0")}.txt"))
-                .writeAsString(chosen);
-            final ok = await _downloadHlsToFile(chosen, out, headers: headers);
-            if (!ok) {
-              throw Exception("HLS 下载失败（可能需要更强的解复用/转码）");
-            }
-            media.add({
-              "type": "video",
-              "mime": "video/mp4",
-              "file": vname,
-              "source_url": chosen,
-              "derived_from": "m3u8",
-            });
-            _pushLog("[vid] ok hls $vname (${out.lengthSync()})");
-          } else {
-            _pushLog("[vid] no urls for group=$k");
+            _pushLog("[vid] ok mp4 $vname (${out.lengthSync()}) area=$area group=$k");
+          } catch (e) {
+            await File(p.join(rawDir.path, "video_error_${vIdx.toString().padLeft(2, "0")}.txt"))
+                .writeAsString(e.toString());
+            _pushLog("[vid] fail $e");
           }
-        } catch (e) {
-          await File(p.join(rawDir.path, "video_error_${vIdx.toString().padLeft(2, "0")}.txt"))
-              .writeAsString(e.toString());
-          _pushLog("[vid] fail $e");
+          vIdx += 1;
         }
-        vIdx += 1;
       }
 
       final meta = <String, dynamic>{
@@ -761,7 +795,7 @@ String? _pickBestMp4(List<String> urls) {
   String? best;
   var bestArea = -1;
   for (final u in urls) {
-    final m = RegExp(r"/vid/(\\d+)x(\\d+)/").firstMatch(u);
+    final m = RegExp(r"/vid/(\d+)x(\d+)/").firstMatch(u);
     var area = 0;
     if (m != null) {
       area = int.tryParse(m.group(1) ?? "0")! * int.tryParse(m.group(2) ?? "0")!;
@@ -801,8 +835,8 @@ Future<String?> _pickBestM3u8(List<String> urls, {required Map<String, String> h
         final ln = lines[i];
         if (!ln.startsWith("#EXT-X-STREAM-INF:")) continue;
         final attrs = ln.substring("#EXT-X-STREAM-INF:".length);
-        final bw = int.tryParse(RegExp(r"BANDWIDTH=(\\d+)").firstMatch(attrs)?.group(1) ?? "") ?? 0;
-        final resM = RegExp(r"RESOLUTION=(\\d+)x(\\d+)").firstMatch(attrs);
+        final bw = int.tryParse(RegExp(r"BANDWIDTH=(\d+)").firstMatch(attrs)?.group(1) ?? "") ?? 0;
+        final resM = RegExp(r"RESOLUTION=(\d+)x(\d+)").firstMatch(attrs);
         final area = resM == null
             ? 0
             : (int.tryParse(resM.group(1) ?? "0") ?? 0) * (int.tryParse(resM.group(2) ?? "0") ?? 0);
