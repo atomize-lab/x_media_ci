@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/ci_api.dart';
+import 'settings_screen.dart';
 
 class BrowseScreen extends StatefulWidget {
   const BrowseScreen({super.key});
@@ -20,12 +21,16 @@ class _BrowseScreenState extends State<BrowseScreen> {
   @override
   void initState() {
     super.initState();
-    _future = CiApi.instance.accounts();
+    _future = (CiApi.instance.remoteEnabled && CiApi.instance.isConfigured)
+        ? CiApi.instance.accounts()
+        : Future.value(const []);
   }
 
   Future<void> _reload() async {
     setState(() {
-      _future = CiApi.instance.accounts();
+      _future = (CiApi.instance.remoteEnabled && CiApi.instance.isConfigured)
+          ? CiApi.instance.accounts()
+          : Future.value(const []);
     });
   }
 
@@ -36,6 +41,62 @@ class _BrowseScreenState extends State<BrowseScreen> {
       child: FutureBuilder<List<Account>>(
         future: _future,
         builder: (context, snap) {
+          if (!CiApi.instance.remoteEnabled) {
+            return ListView(
+              children: [
+                const SizedBox(height: 140),
+                const Icon(Icons.cloud_off, size: 48),
+                const SizedBox(height: 12),
+                const Center(child: Text("Browse/Remote/Edit 默认关闭（不依赖电脑）")),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    "电脑服务已关闭。只用手机请去 Local 标签页。",
+                    style: const TextStyle(fontFamily: "monospace", fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    ),
+                    child: const Text("去开启电脑服务"),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Center(child: Text("要浏览电脑上的 CI 目录，再去 Settings 开启并配置。")),
+              ],
+            );
+          }
+          if (!CiApi.instance.isConfigured) {
+            return ListView(
+              children: [
+                const SizedBox(height: 140),
+                const Icon(Icons.settings_ethernet, size: 48),
+                const SizedBox(height: 12),
+                const Center(child: Text("已开启电脑服务，但未设置 Server URL")),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    "请在 Settings 里填 http://<PC_IP>:8765",
+                    style: const TextStyle(fontFamily: "monospace", fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    ),
+                    child: const Text("去设置"),
+                  ),
+                ),
+              ],
+            );
+          }
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }

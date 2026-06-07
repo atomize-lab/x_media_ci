@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../api/ci_api.dart';
+import 'settings_screen.dart';
 
 class RemoteScreen extends StatefulWidget {
   const RemoteScreen({super.key});
@@ -79,6 +80,58 @@ class _RemoteScreenState extends State<RemoteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!CiApi.instance.remoteEnabled) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const SizedBox(height: 120),
+          const Icon(Icons.cloud_off, size: 48),
+          const SizedBox(height: 12),
+          const Center(child: Text("Remote 默认关闭（不依赖电脑）")),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              "要远程让电脑跑任务，请去 Settings 开启并配置。",
+              style: const TextStyle(fontFamily: "monospace", fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+            child: const Text("去开启电脑服务"),
+          ),
+        ],
+      );
+    }
+    if (!CiApi.instance.isConfigured) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const SizedBox(height: 120),
+          const Icon(Icons.settings_ethernet, size: 48),
+          const SizedBox(height: 12),
+          const Center(child: Text("未设置 Server URL")),
+          const SizedBox(height: 8),
+          const Center(
+            child: Text(
+              "去 Settings 填 http://<PC_IP>:8765",
+              style: TextStyle(fontFamily: "monospace", fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+            child: const Text("去设置"),
+          ),
+        ],
+      );
+    }
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [

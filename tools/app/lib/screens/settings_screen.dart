@@ -17,11 +17,13 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _ctrl;
   String? _health;
+  bool _remoteEnabled = false;
 
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: CiApi.instance.baseUrl);
+    _remoteEnabled = CiApi.instance.remoteEnabled;
   }
 
   @override
@@ -46,6 +48,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        SwitchListTile(
+          title: const Text("启用电脑服务（Browse/Remote/Edit）"),
+          subtitle: const Text("关闭后 App 完全不依赖电脑，只用 Local。"),
+          value: _remoteEnabled,
+          onChanged: (v) => setState(() => _remoteEnabled = v),
+        ),
+        const Text(
+          "真机要填电脑的局域网 IP，例如：http://192.168.1.23:8765\n"
+          "模拟器才用：http://10.0.2.2:8765",
+        ),
+        const SizedBox(height: 12),
         TextField(
           controller: _ctrl,
           decoration: const InputDecoration(
@@ -54,10 +67,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton(
+              onPressed: () => setState(() => _ctrl.text = ""),
+              child: const Text("清空"),
+            ),
+            OutlinedButton(
+              onPressed: () => setState(() => _ctrl.text = "http://10.0.2.2:8765"),
+              child: const Text("模拟器 10.0.2.2"),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         Row(children: [
           FilledButton(
             onPressed: () {
               CiApi.instance.baseUrl = _ctrl.text;
+              CiApi.instance.remoteEnabled = _remoteEnabled;
               CiApi.instance.save();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Saved")),
@@ -67,7 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 12),
           OutlinedButton(
-            onPressed: _ping,
+            onPressed: _remoteEnabled ? _ping : null,
             child: const Text("Ping /api/health"),
           ),
         ]),

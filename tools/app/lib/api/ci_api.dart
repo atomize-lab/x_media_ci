@@ -16,25 +16,47 @@ class CiApi {
   static final CiApi instance = CiApi._();
 
   static const _kBaseUrlKey = "ci.base_url";
-  String _baseUrl = "http://10.0.2.2:8765"; // android emulator -> host
+  static const _kRemoteEnabledKey = "ci.remote_enabled";
+  String _baseUrl = "";
+  bool _remoteEnabled = false;
 
   String get baseUrl => _baseUrl;
   set baseUrl(String v) {
     _baseUrl = v.trim().replaceAll(RegExp(r'/+$'), '');
   }
 
+  bool get remoteEnabled => _remoteEnabled;
+  set remoteEnabled(bool v) {
+    _remoteEnabled = v;
+  }
+
+  bool get isConfigured =>
+      _baseUrl.isNotEmpty && (_baseUrl.startsWith("http://") || _baseUrl.startsWith("https://"));
+
   Future<void> load() async {
     final p = await SharedPreferences.getInstance();
     final v = p.getString(_kBaseUrlKey);
-    if (v != null && v.isNotEmpty) _baseUrl = v;
+    if (v != null && v.trim().isNotEmpty) {
+      baseUrl = v;
+    }
+    _remoteEnabled = p.getBool(_kRemoteEnabledKey) ?? false;
   }
 
   Future<void> save() async {
     final p = await SharedPreferences.getInstance();
     await p.setString(_kBaseUrlKey, _baseUrl);
+    await p.setBool(_kRemoteEnabledKey, _remoteEnabled);
   }
 
-  Uri _u(String path) => Uri.parse("$_baseUrl$path");
+  Uri _u(String path) {
+    if (!_remoteEnabled) {
+      throw StateError("Remote server disabled. Enable it in Settings.");
+    }
+    if (!isConfigured) {
+      throw StateError("Server base URL not configured. Open Settings and set http://<PC_IP>:8765");
+    }
+    return Uri.parse("$_baseUrl$path");
+  }
 
   // ----- low-level helpers ---------------------------------------------------
 
