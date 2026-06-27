@@ -6,6 +6,8 @@ X Media CI turns public X/Twitter posts that you can already access into a durab
 
 It is designed for builders who use X as a research, product, market, or content signal source and need a reproducible way to preserve useful posts before they disappear from the feed.
 
+![X Media CI architecture](docs/assets/architecture.svg)
+
 > Status: early-stage but functional. The current repo includes a Playwright-based X capture tool, a structured storage layout, Markdown/PDF/OCR/export helpers, a FastAPI local server, GitHub Actions validation, and a Flutter client skeleton for mobile/desktop browsing.
 
 ---
@@ -289,7 +291,7 @@ See [`docs/roadmap.md`](docs/roadmap.md).
 
 ## License
 
-This repository currently contains code and documentation for an early-stage open-source project. If you reuse or distribute it, make sure the repository license matches your intended usage before publishing packages or releases.
+MIT. See [`LICENSE`](LICENSE).
 
 ---
 
