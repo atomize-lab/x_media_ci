@@ -20,6 +20,13 @@ Endpoints (all JSON unless noted):
     GET  /api/jobs/{job_id}                  -> poll job status / result
     GET  /media/{handle}/{tweet_id}/{path}   -> serve local media files
 
+    Agent-access endpoints (v0.5):
+
+    GET  /api/index/items                    -> structured item list for agents
+    GET  /api/item/{item_id}/context         -> agent-readable context for an item
+    POST /api/export/agent_bundle            -> batch bundle export (one or more items)
+    POST /api/validate/item/{item_id}        -> on-demand validation of an item
+
 The CI root is auto-discovered relative to this file, but can be
 overridden with the X_MEDIA_CI_ROOT env var.
 """
@@ -69,6 +76,11 @@ from ci_common import (  # noqa: E402
     load_tweet_meta,
     tweet_paths,
 )
+
+# Agent-access layer: reuse the same library functions as the CLI so the
+# server never re-implements logic that already has tests.
+from build_agent_bundle import build_bundle  # noqa: E402
+from tweet_schema import validate_tweet_dir  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -425,6 +437,245 @@ async def index_tweets(limit: int = Query(200, ge=1, le=5000),
                     continue
     rows = rows[:limit]
     return {"count": len(rows), "items": rows}
+
+
+# ---------------------------------------------------------------------------
+# Agent-access endpoints (v0.5)
+# ---------------------------------------------------------------------------
+
+def _scan_all_items() -> list[dict]:
+    """Scan every tweet dir under CI_ROOT and return a structured list.
+
+    Each item dict contains: item_id, handle, dir_name, path, captured_at,
+    author_handle, has_media, media_count, has_ocr, has_article, validated.
+    """
+    items: list[dict] = []
+    if not CI_ROOT.is_dir():
+        return items
+    for td in find_tweet_dirs(CI_ROOT):
+        meta = load_tweet_meta(td)
+        tp = tweet_paths(td)
+        media_list = meta.get("media") or []
+        media_count = len(media_list) if isinstance(media_list, list) else 0
+        has_ocr = bool(tp.ocr_txt() and tp.ocr_txt().is_file())
+        has_article = False
+        if tp.exports_dir.is_dir():
+            has_article = any(tp.exports_dir.glob("*.md"))
+        required = ("tweet_id", "tweet_url", "author_handle", "datetime_utc")
+        validated = all(meta.get(k) for k in required)
+        items.append({
+            "item_id": str(meta.get("tweet_id", td.name.rsplit("_", 1)[-1])),
+            "handle": tp.handle,
+            "dir_name": td.name,
+            "path": str(td),
+            "captured_at": meta.get("datetime_utc", ""),
+            "author_handle": (meta.get("author_handle", "") or "").lstrip("@"),
+            "has_media": media_count > 0,
+            "media_count": media_count,
+            "has_ocr": has_ocr,
+            "has_article": has_article,
+            "validated": validated,
+        })
+    return items
+
+
+@app.get("/api/index/items")
+async def index_items(
+    limit: int = Query(200, ge=1, le=5000),
+    handle: Optional[str] = None,
+) -> dict:
+    """Return a structured list of archived items for agent consumption.
+
+    Unlike ``/api/index/tweets`` (which reads pre-built JSONL indices), this
+    endpoint scans the actual directories so it always reflects the current
+    on-disk state. Each item includes trust signals (has_media, has_ocr,
+    has_article, validated) that let an agent filter by data quality.
+    """
+    items = _scan_all_items()
+    if handle:
+        items = [it for it in items if it["handle"] == handle]
+    items = items[:limit]
+    return {"count": len(items), "items": items}
+
+
+@app.get("/api/item/{item_id}/context")
+async def item_context(item_id: str) -> dict:
+    """Return agent-readable context for a single item.
+
+    Combines tweet metadata, media file list, bundle-ready excerpt, trust
+    flags, and manifest preview (if a manifest exists). This is the single
+    endpoint an agent calls to understand an item before consuming its bundle.
+    """
+    td = _locate_tweet(item_id)
+    if not td:
+        raise HTTPException(404, f"item not found: {item_id}")
+    meta = load_tweet_meta(td)
+    tp = tweet_paths(td)
+
+    # Media list
+    media: list[dict] = []
+    for sub in ("images", "video", "audio", "raw"):
+        d = tp.root / "media" / sub
+        if d.is_dir():
+            for f in sorted(d.iterdir()):
+                if f.is_file() and f.name != ".gitkeep":
+                    media.append({
+                        "sub": sub,
+                        "name": f.name,
+                        "size": f.stat().st_size,
+                        "url": f"/media/{tp.handle}/{td.name}/{sub}/{f.name}",
+                    })
+
+    # Trust flags
+    has_media = len(media) > 0
+    has_ocr = bool(tp.ocr_txt() and tp.ocr_txt().is_file())
+    has_article = False
+    if tp.exports_dir.is_dir():
+        has_article = any(tp.exports_dir.glob("*.md"))
+    required = ("tweet_id", "tweet_url", "author_handle", "datetime_utc")
+    validated = all(meta.get(k) for k in required)
+
+    # Manifest preview (if exists)
+    manifest_path = td / "manifest.json"
+    manifest_preview: Optional[dict] = None
+    if manifest_path.is_file():
+        try:
+            manifest_preview = json.loads(
+                manifest_path.read_text(encoding="utf-8")
+            )
+        except json.JSONDecodeError:
+            manifest_preview = {"error": "manifest.json is invalid JSON"}
+
+    # Text excerpt (bundle-style, first 280 chars)
+    full_text = meta.get("text", "")
+    if full_text and len(full_text) > 280:
+        excerpt = full_text[:280] + "..."
+    else:
+        excerpt = full_text
+
+    return {
+        "item_id": str(meta.get("tweet_id", item_id)),
+        "handle": tp.handle,
+        "dir_name": td.name,
+        "path": str(td),
+        "source_url": meta.get("tweet_url", ""),
+        "source_platform": _infer_platform(meta.get("tweet_url", "")),
+        "captured_at": meta.get("datetime_utc", ""),
+        "author_handle": (meta.get("author_handle", "") or "").lstrip("@"),
+        "text_excerpt": excerpt,
+        "text_full": full_text if full_text else None,
+        "media": media,
+        "trust_flags": {
+            "validated": validated,
+            "has_media": has_media,
+            "has_ocr": has_ocr,
+            "has_article": has_article,
+            "media_verified": has_media,  # all present media files exist
+        },
+        "manifest": manifest_preview,
+    }
+
+
+def _infer_platform(url: str) -> str:
+    if "x.com" in url:
+        return "x"
+    if "twitter.com" in url:
+        return "twitter"
+    return "web"
+
+
+class BundleExportRequest(BaseModel):
+    item_ids: list[str] = Field(
+        ..., description="One or more item IDs (tweet IDs) to export as bundles."
+    )
+    hash_media: bool = Field(
+        default=False, description="Compute SHA-256 hashes for media files."
+    )
+
+
+@app.post("/api/export/agent_bundle")
+async def export_agent_bundle(req: BundleExportRequest) -> dict:
+    """Export one or more items as agent bundles.
+
+    Each item is exported to a temporary directory. The response includes
+    the bundle.json content for each item and the output directory path,
+    so an agent can either consume the JSON inline or access the files.
+    """
+    if not req.item_ids:
+        raise HTTPException(400, "item_ids must not be empty")
+    if len(req.item_ids) > 50:
+        raise HTTPException(400, "item_ids must not exceed 50 items per request")
+
+    import tempfile
+
+    results: list[dict] = []
+    errors: list[dict] = []
+    base_output = Path(tempfile.mkdtemp(prefix="xmc_bundles_"))
+
+    for idx, item_id in enumerate(req.item_ids):
+        td = _locate_tweet(item_id)
+        if not td:
+            errors.append({"item_id": item_id, "error": "item not found"})
+            continue
+        output_dir = base_output / f"bundle_{idx}_{item_id}"
+        try:
+            bundle_path = build_bundle(
+                tweet_dir=td,
+                output_dir=output_dir,
+                hash_media=req.hash_media,
+                overwrite=True,
+            )
+            bundle_json = json.loads(
+                bundle_path.read_text(encoding="utf-8")
+            )
+            file_count = sum(1 for _ in output_dir.rglob("*") if _.is_file())
+            results.append({
+                "item_id": item_id,
+                "bundle_json": bundle_json,
+                "output_dir": str(output_dir),
+                "file_count": file_count,
+            })
+        except Exception as e:
+            errors.append({
+                "item_id": item_id,
+                "error": f"{type(e).__name__}: {e}",
+            })
+
+    return {
+        "exported": len(results),
+        "errors": len(errors),
+        "base_output_dir": str(base_output),
+        "results": results,
+        "error_details": errors,
+    }
+
+
+@app.post("/api/validate/item/{item_id}")
+async def validate_item(item_id: str) -> dict:
+    """Run on-demand schema validation for a single item.
+
+    Returns the validation report: errors, warnings, and an ok flag.
+    Does not modify any files. An agent can call this before consuming
+    an item to check data quality.
+    """
+    td = _locate_tweet(item_id)
+    if not td:
+        raise HTTPException(404, f"item not found: {item_id}")
+    report = validate_tweet_dir(td)
+    return {
+        "item_id": item_id,
+        "ok": report.ok,
+        "error_count": len(report.errors),
+        "warning_count": len(report.warnings),
+        "errors": [
+            {"code": e.code, "message": e.message, "path": e.path}
+            for e in report.errors
+        ],
+        "warnings": [
+            {"code": w.code, "message": w.message, "path": w.path}
+            for w in report.warnings
+        ],
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -3,3 +3,5 @@
 # (or: uv pip install -r requirements-dev.txt)
 
 pytest>=8.0
+fastapi>=0.100
+httpx>=0.24

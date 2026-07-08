@@ -143,7 +143,9 @@ Server:
 bash tools/server/run_server.sh
 ```
 
-Endpoints include:
+The server exposes two layers of endpoints:
+
+**Management endpoints** (for the Flutter app / human browsing):
 
 - `GET /api/health`
 - `GET /api/accounts`
@@ -154,6 +156,25 @@ Endpoints include:
 - `POST /api/run`
 - `GET /api/jobs/{job_id}`
 - `GET /media/...`
+
+**Agent-access endpoints** (v0.5, for AI agent programmatic consumption):
+
+- `GET /api/index/items` — structured item list with trust signals
+  (has\_media, has\_ocr, has\_article, validated), always reflects
+  current on-disk state
+- `GET /api/item/{item_id}/context` — agent-readable context for a
+  single item: metadata, media list, text excerpt, trust flags, and
+  manifest preview
+- `POST /api/export/agent_bundle` — batch export one or more items as
+  agent bundles; returns inline `bundle.json` for each item
+- `POST /api/validate/item/{item_id}` — on-demand schema validation;
+  returns structured errors and warnings without modifying files
+
+The agent-access layer reuses the same library functions (`build_bundle`,
+`build_manifest`, `validate_tweet_dir`) as the CLI, so the server never
+re-implements logic that already has tests. See the cookbooks
+(`docs/cookbook-claude.md`, `docs/cookbook-hermes.md`) for end-to-end
+HTTP consumption recipes.
 
 The server is a local control plane. It should not be exposed to the public internet without authentication and hardening.
 

@@ -14,10 +14,10 @@ Already present and tested:
 - Image/video saving with SHA-256 media hashes
 - JSONL indices (global, by-handle, by-date)
 - Markdown/PDF/OCR/transcode export helpers
-- FastAPI local server with 9 endpoints
+- FastAPI local server with 13 endpoints (9 management + 4 agent-access)
 - Flutter client skeleton (browse/remote/edit flows)
 - GitHub Actions CI: lint + fixture validation + pytest (Ubuntu + Windows)
-- 192 passing tests with fully synthetic fixtures (no third-party media)
+- 218 passing tests with fully synthetic fixtures (no third-party media)
 - CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
 - Issue/PR templates, CHANGELOG.md, Makefile, `xmc doctor`
 - docs: vision.md, architecture.md, agent-integration.md, use-cases.md, roadmap.md, agent-bundle-spec.md, provenance.md
@@ -61,16 +61,16 @@ Make every archived item traceable from capture to export.
 - [x] Add transform trace fields to capture/transcode/OCR scripts
 - [x] Add `docs/provenance.md`
 
-### v0.5 — Agent-access API (Week 5)
+### v0.5 - Agent-access API (Week 5)
 
 Strengthen FastAPI as a query and export interface for agents.
 
-- [ ] Add `GET /api/index/items` (structured item list for agent consumption)
-- [ ] Add `GET /api/item/{id}/context` (agent-readable context for an item)
-- [ ] Add `POST /api/export/agent_bundle` (batch bundle export)
-- [ ] Add `POST /api/validate/item/{id}` (on-demand validation)
-- [ ] Add API tests (`tests/server/test_app_api.py`, `tests/server/test_agent_export.py`)
-- [ ] Update `docs/architecture.md` with agent-access layer
+- [x] Add `GET /api/index/items` (structured item list for agent consumption)
+- [x] Add `GET /api/item/{id}/context` (agent-readable context for an item)
+- [x] Add `POST /api/export/agent_bundle` (batch bundle export)
+- [x] Add `POST /api/validate/item/{id}` (on-demand validation)
+- [x] Add API tests (`tests/server/test_app_api.py`)
+- [x] Update `docs/architecture.md` with agent-access layer
 
 ### v0.6 - Agent consumption cookbook (Week 6)
 
