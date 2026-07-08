@@ -22,14 +22,16 @@ from tweet_schema import validate_tweet_dir
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    g = ap.add_mutually_exclusive_group(required=True)
-    g.add_argument("--root", help="Recursively validate every tweet dir under ROOT.")
-    g.add_argument("dirs", nargs="*", help="One or more tweet directories.")
+    ap.add_argument("--root", help="Recursively validate every tweet dir under ROOT.")
+    ap.add_argument("dirs", nargs="*", help="One or more tweet directories.")
     ap.add_argument("--strict", action="store_true",
                     help="Treat warnings as errors for the exit code.")
     ap.add_argument("--quiet", action="store_true",
                     help="Only print tweet dirs that have issues.")
     args = ap.parse_args(argv)
+
+    if not args.root and not args.dirs:
+        ap.error("one of --root or DIRS is required")
 
     if args.root:
         root = Path(args.root).expanduser().resolve()

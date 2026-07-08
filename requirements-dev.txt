@@ -1,0 +1,5 @@
+# Development dependencies for x_media_ci
+# Install with: pip install -r requirements-dev.txt
+# (or: uv pip install -r requirements-dev.txt)
+
+pytest>=8.0

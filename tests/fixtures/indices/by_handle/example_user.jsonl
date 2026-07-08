@@ -1,0 +1,2 @@
+{"tweet_id": "1234567890", "tweet_url": "https://x.com/example_user/status/1234567890", "author_handle": "example_user", "datetime_utc": "2026-07-08T18:00:00Z", "text_preview": "Just shipped a new local-first media archiver..."}
+{"tweet_id": "9876543210", "tweet_url": "https://x.com/example_user/status/9876543210", "author_handle": "example_user", "datetime_utc": "2026-07-01 12:00:00", "text_preview": "Testing edge cases in the validator."}

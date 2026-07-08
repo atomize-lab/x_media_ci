@@ -1,0 +1,18 @@
+{
+  "tweet_id": "1234567890",
+  "tweet_url": "https://x.com/example_user/status/1234567890",
+  "author_handle": "example_user",
+  "datetime_utc": "2026-07-08T18:00:00Z",
+  "datetime_beijing": "2026-07-09T02:00:00+08:00",
+  "text": "Just shipped a new local-first media archiver for X/Twitter. Fully offline, agent-friendly, MIT licensed. #buildinpublic",
+  "media": [
+    {"file": "01.png", "type": "image", "alt_text": "screenshot of the CLI"},
+    {"file": "02.png", "type": "image", "alt_text": "architecture diagram"}
+  ],
+  "exports": [
+    {"file": "article_md_extract.json", "type": "text"},
+    {"file": "article_md.pdf", "type": "pdf"}
+  ],
+  "components": ["text", "images"],
+  "replies": []
+}

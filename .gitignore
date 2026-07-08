@@ -1,5 +1,5 @@
-accounts/
-indices/
+/accounts/
+/indices/
 
 **/__pycache__/
 *.pyc
@@ -19,3 +19,8 @@ tools/dist/
 
 .idea/
 .vscode/
+
+# Test/venv artifacts
+.venv/
+.pytest_cache/
+

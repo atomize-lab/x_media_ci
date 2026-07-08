@@ -42,11 +42,12 @@ class TweetPaths:
 
     @property
     def handle(self) -> str:
-        # .../accounts/<handle>/tweets/...
-        try:
-            return self.root.parts[-4]
-        except IndexError:
+        # .../accounts/<handle>/tweets/YYYY/YYYY-MM/<ts>_<tweet_id>/
+        # The tweet dir itself is parts[-1]; handle is 5 levels up.
+        parts = self.root.parts
+        if len(parts) < 5:
             return ""
+        return parts[-5]
 
     def extract_json(self) -> Optional[Path]:
         """Return the most relevant *extract.json* inside ``exports/``."""

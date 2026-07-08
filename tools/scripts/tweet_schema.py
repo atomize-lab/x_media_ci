@@ -41,7 +41,7 @@ RECOMMENDED_FIELDS = (
     "components",
     "replies",
 )
-TWITTER_STATUS_RE = re.compile(r"^/([^/]+)/status/(\d+)")
+TWITTER_STATUS_RE = re.compile(r"/([^/]+)/status/(\d+)")
 
 
 @dataclass

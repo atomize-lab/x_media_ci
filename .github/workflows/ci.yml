@@ -29,18 +29,20 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r tools/requirements.txt
           python -m pip install pyflakes
+          python -m pip install -r requirements-dev.txt
 
       - name: pyflakes
         shell: bash
         working-directory: tools
         run: python x_media_ci.py lint
 
-      - name: validate sample fixtures
+      - name: validate test fixtures
         shell: bash
-        working-directory: tools
         run: |
-          if [ -d "../accounts" ]; then
-            python x_media_ci.py validate --root "../accounts"
-          else
-            echo "No ../accounts dir in this checkout; skipping validate"
-          fi
+          # Validate only the good fixture (dirty/invalid are for pytest)
+          python tools/scripts/tweet_validate.py \
+            tests/fixtures/accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890
+
+      - name: pytest
+        shell: bash
+        run: python -m pytest tests/ -v --tb=short

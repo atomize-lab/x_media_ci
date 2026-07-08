@@ -1,0 +1,14 @@
+{
+  "tweet_id": "9876543210",
+  "tweet_url": "https://x.com/example_user/status/9876543210",
+  "author_handle": "@example_user",
+  "datetime_utc": "2026-07-01 12:00:00",
+  "text": "Testing edge cases in the validator.",
+  "media": [
+    {"file": "01.png", "type": "image"},
+    {"file": "missing_file.png", "type": "image"}
+  ],
+  "exports": [
+    {"file": "nonexistent.pdf", "type": "pdf"}
+  ]
+}
