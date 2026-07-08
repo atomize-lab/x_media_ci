@@ -221,25 +221,113 @@ This separation keeps capture, storage, review, and publishing independently tes
 
 ---
 
-## Future: agent bundle export
+## Agent bundle + manifest: joint consumption
 
-The roadmap includes an explicit `xmc export-agent` command that packages selected items into a single handoff bundle:
+The archive now exports two complementary artifacts that agents consume together:
+
+### Agent bundle (for consumption)
+
+An agent bundle is a self-describing directory containing:
 
 ```text
-agent_handoff/
-  selected_items.jsonl    # compact item list for context loading
-  context_brief.md        # human-readable summary of the selection
-  citations.json          # stable citation metadata (URL, hash, timestamp)
-  manifest.lock.json      # integrity check for all included files
+<bundle_dir>/
+  bundle.json          # manifest with all metadata, text, provenance, asset list
+  media/               # copied media files (images, video, audio)
+  article.md           # article markdown (if available)
+  ocr_text.txt         # full OCR text (if available)
+  tweet.json           # original source metadata (for reference)
 ```
 
-This will give agents a single, self-contained input package — no need to walk directory trees or load indices manually. See [`docs/roadmap.md`](roadmap.md) for the timeline.
+The agent reads `bundle.json` to get everything it needs: text, media references
+with hashes, provenance, and trust flags. No directory walking required.
+
+**Export a bundle:**
+
+```bash
+python tools/x_media_ci.py export-agent \
+  --tweet-dir accounts/<handle>/tweets/YYYY/YYYY-MM/<timestamp>_<id> \
+  --output my_bundle \
+  --hash-media
+```
+
+See [`docs/agent-bundle-spec.md`](agent-bundle-spec.md) for the full specification.
+
+### Manifest (for integrity)
+
+A manifest (`manifest.json`) lives in the item directory and records:
+
+- **File inventory** with SHA-256 hashes for every file
+- **Transform chain** (capture -> article_md -> ocr -> export_agent -> manifest)
+- **Trust flags** for quick data-quality assessment
+
+**Generate a manifest:**
+
+```bash
+python tools/x_media_ci.py manifest \
+  --tweet-dir accounts/<handle>/tweets/YYYY/YYYY-MM/<timestamp>_<id>
+```
+
+See [`docs/provenance.md`](provenance.md) for the full specification.
+
+### Joint citation standard
+
+When an agent cites an archived item, it should reference **both** artifacts:
+
+```text
+[1] @author_handle, captured_at.
+    "{text_excerpt first 80 chars}..."
+    Source: {source_url}
+    Bundle: bundle.json v{bundle_version}, exported {provenance.exported_at}
+    Manifest: manifest.json, {N} files hashed
+    Primary media SHA-256: {sha256 of first media entry}
+    Transform chain: {transform steps, comma-separated}
+    Trust: validated={trust_flags.validated}, media_verified={trust_flags.media_verified}
+```
+
+**Why both:**
+
+| | Bundle | Manifest |
+|---|---|---|
+| **Optimized for** | Agent consumption (embedded text, media copies) | Integrity audit (full file hashes, transform chain) |
+| **Location** | Separate portable directory | Item directory (in-place) |
+| **Includes media** | Yes (copied files) | No (references by path) |
+| **Includes full text** | Yes (in bundle.json) | No (references by path) |
+
+The bundle gives the agent convenience; the manifest gives the verifier
+auditability. Citing both gives the reader maximum confidence.
+
+### Field authority
+
+When bundle.json and manifest.json disagree (which should not happen in normal
+operation, but agents should handle defensively):
+
+| Field | Authority | Reason |
+|---|---|---|
+| File SHA-256 hashes | Manifest | Manifest hashes all files; bundle only hashes media |
+| Text content | Bundle | Bundle embeds text; manifest references by path |
+| Transform chain | Manifest | Bundle does not record transforms |
+| Trust flags | Both (should match) | If they differ, flag for human review |
+| Provenance metadata | Bundle | Bundle records export metadata; manifest records item metadata |
+
+---
+
+## Cookbooks
+
+For step-by-step recipes with real commands and prompts:
+
+- [`docs/cookbook-claude.md`](cookbook-claude.md) - Claude / Claude Code consuming bundles
+- [`docs/cookbook-hermes.md`](cookbook-hermes.md) - Hermes Agent consuming bundles
+- [`tools/examples/agent/`](../tools/examples/agent/) - quick-reference examples
 
 ---
 
 ## See also
 
-- [`docs/architecture.md`](architecture.md) — the four-layer architecture and trust boundaries
-- [`docs/use-cases.md`](use-cases.md) — real-world scenarios
-- [`docs/vision.md`](vision.md) — project positioning and the agent-ready thesis
-- [`SECURITY.md`](../SECURITY.md) — responsible-use policy
+- [`docs/architecture.md`](architecture.md) - the five-layer architecture and trust boundaries
+- [`docs/agent-bundle-spec.md`](agent-bundle-spec.md) - agent bundle v1.0 specification
+- [`docs/provenance.md`](provenance.md) - manifest layer and integrity verification
+- [`docs/cookbook-claude.md`](cookbook-claude.md) - step-by-step Claude consumption recipes
+- [`docs/cookbook-hermes.md`](cookbook-hermes.md) - step-by-step Hermes consumption recipes
+- [`docs/use-cases.md`](use-cases.md) - real-world scenarios
+- [`docs/vision.md`](vision.md) - project positioning and the agent-ready thesis
+- [`SECURITY.md`](../SECURITY.md) - responsible-use policy

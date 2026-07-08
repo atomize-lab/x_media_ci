@@ -8,7 +8,7 @@ It is designed for builders who use social media as a research, product, or mark
 
 ![X Media CI architecture](docs/assets/architecture.svg)
 
-> **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, GitHub Actions CI, 88 passing tests, and a Flutter client skeleton for mobile/desktop review.
+> **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, GitHub Actions CI, 192 passing tests, agent bundle + provenance manifest exports, and a Flutter client skeleton for mobile/desktop review.
 
 ---
 
@@ -203,7 +203,7 @@ indices/
 │   ├── roadmap.md
 │   ├── agent-integration.md
 │   └── use-cases.md
-├── tests/               # 88 pytest tests, synthetic fixtures
+├── tests/               # 192 pytest tests, synthetic fixtures
 ├── .github/workflows/   # CI: lint + validate + pytest (Ubuntu + Windows)
 └── tools/
     ├── fetch_x.py              # Playwright X capture: URL + timeline
@@ -224,12 +224,15 @@ The archive data itself is usually stored outside the repo or under a local `acc
 | Document | Description |
 |---|---|
 | [`docs/vision.md`](docs/vision.md) | Project positioning and long-term direction |
-| [`docs/architecture.md`](docs/architecture.md) | Capture / storage / export / access architecture |
+| [`docs/architecture.md`](docs/architecture.md) | Capture / storage / export / provenance / access architecture |
 | [`docs/agent-integration.md`](docs/agent-integration.md) | How AI agents consume the archive as a context layer |
+| [`docs/agent-bundle-spec.md`](docs/agent-bundle-spec.md) | Agent bundle v1.0 specification |
+| [`docs/provenance.md`](docs/provenance.md) | Manifest layer: provenance, integrity, and transform tracing |
 | [`docs/use-cases.md`](docs/use-cases.md) | Real-world scenarios and workflows |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones toward a stable v1 |
 | [`SECURITY.md`](SECURITY.md) | Security and responsible-use policy |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute |
+| [`CHANGELOG.md`](CHANGELOG.md) | Versioned change history |
 
 ---
 
@@ -272,6 +275,31 @@ All three must pass before pushing. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 - Plugin hooks for AI-agent summarization and tagging
 
 See [`docs/roadmap.md`](docs/roadmap.md) for the full plan.
+
+---
+
+## Maintainer
+
+This project is maintained by **champ** ([GitHub](https://github.com/champ)).
+
+It is an independent, personal research tool. All commits use the maintainer's
+real GitHub identity, not an AI bot account. AI assistants (Claude, Hermes)
+are used as development tools during the engineering process, but all design
+decisions, code review, and release authority rest with the human maintainer.
+
+### Maintainer workflow
+
+The maintainer uses AI coding assistants for:
+
+- Cross-language refactoring and code generation
+- Test fixture generation from archive structure
+- Documentation writing and review
+- Issue triage and classification
+- Schema evolution planning
+
+These are exactly the workflows that benefit from sustained Claude Max access,
+and the project is structured to serve as a real testbed for agent-ready
+archive consumption.
 
 ---
 

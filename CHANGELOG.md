@@ -7,18 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Added - Agent bundle spec and export (v0.3)
+- `schemas/agent_bundle.schema.json`: agent bundle v1.0 JSON Schema (item_id, source_platform, source_url, captured_at, author_handle, text_excerpt, assets, provenance, trust_flags, related_items)
+- `docs/agent-bundle-spec.md`: full specification for agent bundle v1.0
+- `tools/scripts/build_agent_bundle.py`: bundle generation with copy-on-export, optional SHA-256 media hashing
+- `xmc export-agent` CLI command for single-item bundle export
+- `tools/examples/agent/` directory with Claude, Hermes, and HTTP client examples
+- 39 unit tests for bundle generation, schema validation, and edge cases
+
+### Added - Provenance and manifest layer (v0.4)
+- `schemas/manifest.schema.json`: manifest v1.0 JSON Schema (metadata, files, transforms, trust_flags, summary)
+- `tools/scripts/build_manifest.py`: manifest generator with full-file SHA-256 hashing, automatic transform-chain inference
+- `docs/provenance.md`: provenance rules, verification methods, and bundle-manifest relationship
+- `xmc manifest` CLI command for single-item manifest generation
+- 59 unit tests for manifest generation, hash verification, and transform inference
+
+### Added - Narrative and maintainability (v0.2)
 - Issue templates: bug report and feature request (`.github/ISSUE_TEMPLATE/`)
 - Pull request template (`.github/pull_request_template.md`)
 - `Makefile` with `test`, `lint`, `validate-fixtures`, `serve`, `smoke-cli` targets
 - `xmc doctor` command for environment diagnostics
 - `docs/agent-integration.md`: agent consumption guide with Claude/Hermes/Codex examples
 - `docs/use-cases.md`: three high-value scenarios with ROI comparison
-- `docs/anthropic-grant-plan.md`: feasibility plan (internal reference)
+- Maintainer section in README
 
 ### Changed
 - Rewrote `README.md` with new positioning: "local-first, auditable, agent-ready research archive infrastructure"
 - Restructured `docs/roadmap.md` into grant-relevant track and long-term backlog
+- Updated `docs/architecture.md` from four-layer to five-layer architecture (added provenance & integrity layer)
+- Replaced Unicode CLI output symbols with ASCII for Windows compatibility
+- Test count increased from 88 to 192 (all passing on Ubuntu + Windows CI)
 
 ## [v0.1.0] - 2026-07-08
 

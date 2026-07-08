@@ -17,9 +17,10 @@ Already present and tested:
 - FastAPI local server with 9 endpoints
 - Flutter client skeleton (browse/remote/edit flows)
 - GitHub Actions CI: lint + fixture validation + pytest (Ubuntu + Windows)
-- 88 passing tests with fully synthetic fixtures (no third-party media)
+- 192 passing tests with fully synthetic fixtures (no third-party media)
 - CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
-- docs: vision.md, architecture.md, agent-integration.md, use-cases.md
+- Issue/PR templates, CHANGELOG.md, Makefile, `xmc doctor`
+- docs: vision.md, architecture.md, agent-integration.md, use-cases.md, roadmap.md, agent-bundle-spec.md, provenance.md
 
 ---
 
@@ -34,31 +35,31 @@ Make the project instantly understandable and visibly maintained.
 - [x] Rewrite README with new positioning (local-first, auditable, agent-ready)
 - [x] Add `docs/agent-integration.md`
 - [x] Add `docs/use-cases.md`
-- [ ] Add issue/PR templates (`.github/ISSUE_TEMPLATE/`, `pull_request_template.md`)
-- [ ] Add `CHANGELOG.md` and v0.1.0 release draft
-- [ ] Add `Makefile` or `justfile` (test, lint, validate-fixtures, serve, smoke-cli)
-- [ ] Add `xmc doctor` command (check ffmpeg, playwright, adb, Python deps, directory structure)
-- [ ] Add Maintainer section to README
+- [x] Add issue/PR templates (`.github/ISSUE_TEMPLATE/`, `pull_request_template.md`)
+- [x] Add `CHANGELOG.md` and v0.1.0 release draft
+- [x] Add `Makefile` or `justfile` (test, lint, validate-fixtures, serve, smoke-cli)
+- [x] Add `xmc doctor` command (check ffmpeg, playwright, adb, Python deps, directory structure)
+- [x] Add Maintainer section to README
 
-### v0.3 — Agent bundle spec and export (Week 3)
+### v0.3 - Agent bundle spec and export (Week 3)
 
 Define the stable product that agents consume.
 
-- [ ] Add `schemas/agent_bundle.schema.json` (version, item_id, source_platform, source_url, captured_at, author_handle, text_excerpt, media, ocr_text, article_md_path, citation_label, trust_flags, provenance, related_items)
-- [ ] Add `docs/agent-bundle-spec.md`
-- [ ] Implement `tools/scripts/build_agent_bundle.py`
-- [ ] Add `xmc export-agent` CLI command
-- [ ] Add `tools/examples/agent/minimal_bundle/` example
-- [ ] Add tests for bundle generation and schema validation
+- [x] Add `schemas/agent_bundle.schema.json` (version, item_id, source_platform, source_url, captured_at, author_handle, text_excerpt, media, ocr_text, article_md_path, citation_label, trust_flags, provenance, related_items)
+- [x] Add `docs/agent-bundle-spec.md`
+- [x] Implement `tools/scripts/build_agent_bundle.py`
+- [x] Add `xmc export-agent` CLI command
+- [x] Add `tools/examples/agent/minimal_bundle/` example
+- [x] Add tests for bundle generation and schema validation
 
-### v0.4 — Provenance and manifest layer (Week 4)
+### v0.4 - Provenance and manifest layer (Week 4)
 
 Make every archived item traceable from capture to export.
 
-- [ ] Add `schemas/manifest.schema.json` (capture_tool_version, capture_mode, browser_context, downloaded_assets, sha256, transforms_applied, validation_status, created_at)
-- [ ] Implement `tools/scripts/build_manifest.py`
-- [ ] Add transform trace fields to capture/transcode/OCR scripts
-- [ ] Add `docs/provenance.md`
+- [x] Add `schemas/manifest.schema.json` (capture_tool_version, capture_mode, browser_context, downloaded_assets, sha256, transforms_applied, validation_status, created_at)
+- [x] Implement `tools/scripts/build_manifest.py`
+- [x] Add transform trace fields to capture/transcode/OCR scripts
+- [x] Add `docs/provenance.md`
 
 ### v0.5 — Agent-access API (Week 5)
 
@@ -71,16 +72,16 @@ Strengthen FastAPI as a query and export interface for agents.
 - [ ] Add API tests (`tests/server/test_app_api.py`, `tests/server/test_agent_export.py`)
 - [ ] Update `docs/architecture.md` with agent-access layer
 
-### v0.6 — Agent consumption cookbook (Week 6)
+### v0.6 - Agent consumption cookbook (Week 6)
 
 Prove that Claude, Hermes, and Codex can consume the archive in real workflows.
 
-- [ ] Add `docs/cookbook-claude.md` (how Claude reads the archive for summarization/citation)
-- [ ] Add `docs/cookbook-hermes.md` (how Hermes builds trend reports from the archive)
-- [ ] Add `tools/examples/agent/claude_prompt_example.md`
-- [ ] Add `tools/examples/agent/hermes_workflow.md`
-- [ ] Add `tools/examples/agent/http_client_example.py`
-- [ ] Document what agents should NOT do (no bulk scraping, no redistribution)
+- [x] Add `docs/cookbook-claude.md` (how Claude reads the archive for summarization/citation)
+- [x] Add `docs/cookbook-hermes.md` (how Hermes builds trend reports from the archive)
+- [x] Add `tools/examples/agent/claude_prompt_example.md`
+- [x] Add `tools/examples/agent/hermes_workflow.md`
+- [x] Add `tools/examples/agent/http_client_example.py`
+- [x] Document what agents should NOT do (no bulk scraping, no redistribution)
 
 ### v0.7 — First public release (Week 7)
 
