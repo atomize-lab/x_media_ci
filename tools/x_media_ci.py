@@ -579,6 +579,16 @@ def cmd_export_agent(args: argparse.Namespace) -> int:
     return _run_script("build_agent_bundle.py", sub_args)
 
 
+def cmd_manifest(args: argparse.Namespace) -> int:
+    """Generate a provenance manifest for a tweet directory."""
+    sub_args = [str(args.tweet_dir)]
+    if args.dry_run:
+        sub_args.append("--dry-run")
+    if args.no_pretty:
+        sub_args.append("--no-pretty")
+    return _run_script("build_manifest.py", sub_args)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="x_media_ci",
@@ -728,6 +738,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_ea.add_argument("--no-overwrite", action="store_true",
                       help="Do not remove existing output directory.")
     p_ea.set_defaults(func=cmd_export_agent)
+
+    # manifest -----------------------------------------------------------
+    p_man = sub.add_parser(
+        "manifest",
+        help="Generate a provenance manifest for a tweet directory.",
+    )
+    p_man.add_argument("--tweet-dir", required=True,
+                       help="Source tweet directory (must contain tweet.json).")
+    p_man.add_argument("--dry-run", action="store_true",
+                       help="Print manifest to stdout without writing to disk.")
+    p_man.add_argument("--no-pretty", action="store_true",
+                       help="Compact JSON output.")
+    p_man.set_defaults(func=cmd_manifest)
 
     return p
 

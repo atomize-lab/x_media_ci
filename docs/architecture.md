@@ -1,11 +1,12 @@
 # Architecture
 
-X Media CI is organized around four layers:
+X Media CI is organized around five layers:
 
 1. capture
 2. storage
-3. export/validation
-4. local access clients
+3. provenance & integrity
+4. export/validation + agent bundles
+5. local access clients
 
 ```text
 X / Twitter page
@@ -22,6 +23,8 @@ Local archive (`accounts/`, `indices/`)
       │
       ├── CLI export/validate (`tools/x_media_ci.py`)
       ├── Markdown/PDF/OCR/transcode helpers (`tools/scripts/`)
+      ├── Provenance manifest (`tools/scripts/build_manifest.py`)
+      ├── Agent bundle export (`tools/scripts/build_agent_bundle.py`)
       └── FastAPI server (`tools/server/app.py`)
               │
               ├── Swagger/local browser
@@ -88,6 +91,49 @@ Implemented helper categories:
 - schema validation/fixing
 
 Design rule: exports are derived artifacts. `tweet.json` and media files should remain the stable core.
+
+## Provenance and integrity layer
+
+Each archived item can carry a provenance manifest (`manifest.json`) that
+records the complete processing chain and file inventory with SHA-256
+hashes.
+
+```bash
+x_media_ci manifest --tweet-dir <dir>
+```
+
+The manifest provides:
+
+- **File inventory** — every file classified (`metadata`, `media`,
+  `export`, `ocr`, …) with SHA-256 hash and size.
+- **Transform chain** — ordered processing steps from `capture` →
+  `article_md` → `article_pdf` → `ocr` → `transcode` → `manifest`,
+  with inputs/outputs for each step.
+- **Trust flags** — quick booleans (`has_media`, `has_ocr`,
+  `media_verified`, `all_files_hashed`, …) for data-quality assessment.
+- **Summary** — aggregate file counts and total size.
+
+This layer makes the archive **auditable**: any downstream consumer (AI
+agent, researcher, compliance tool) can verify that files have not been
+tampered with and trace every derived artifact back to its source.
+
+See [Provenance & Manifest](provenance.md) for full specification.
+
+### Agent bundle export
+
+The agent bundle is a portable, self-describing package derived from an
+item directory:
+
+```bash
+x_media_ci export-agent --tweet-dir <dir> --output <bundle_dir>
+```
+
+The bundle (`bundle.json` + copied media) lets an AI agent consume the
+item without understanding the project's internal directory structure.
+The bundle's `provenance` field references the source manifest,
+maintaining traceability from portable bundle back to archived item.
+
+See [Agent Bundle Spec](agent-bundle-spec.md) for full specification.
 
 ## Local API server
 

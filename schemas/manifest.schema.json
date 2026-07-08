@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/atomize-lab/x_media_ci/raw/main/schemas/manifest.schema.json",
+  "title": "Item Manifest",
+  "description": "Provenance manifest for a single archived item. Records where the item came from, when it was captured, what transforms have been applied, and the complete file inventory with hashes.",
+  "type": "object",
+  "required": [
+    "manifest_version",
+    "item_id",
+    "source_platform",
+    "source_url",
+    "captured_at",
+    "generated_at",
+    "generator",
+    "files",
+    "transforms"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Manifest schema version."
+    },
+    "item_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the archived item (e.g., tweet_id)."
+    },
+    "source_platform": {
+      "type": "string",
+      "enum": ["x", "twitter", "web"],
+      "description": "Platform the item was captured from."
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Original URL of the item."
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the item was originally captured/archived (from tweet.json datetime_utc)."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this manifest was generated."
+    },
+    "generator": {
+      "type": "string",
+      "description": "Tool that generated this manifest."
+    },
+    "author_handle": {
+      "type": "string",
+      "description": "Author handle without @ prefix."
+    },
+    "citation_label": {
+      "type": "string",
+      "description": "Human-readable citation label."
+    },
+    "files": {
+      "type": "array",
+      "description": "Complete inventory of all files in the item directory, with relative paths and SHA-256 hashes.",
+      "items": {
+        "$ref": "#/$defs/fileEntry"
+      }
+    },
+    "transforms": {
+      "type": "array",
+      "description": "Ordered list of transforms that have been applied to produce the files in this item directory.",
+      "items": {
+        "$ref": "#/$defs/transform"
+      }
+    },
+    "components": {
+      "type": "array",
+      "description": "Content components present in this item (e.g., text, images, video, audio, article, ocr).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "trust_flags": {
+      "$ref": "#/$defs/trustFlags"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "media_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "export_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "transform_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  "$defs": {
+    "fileEntry": {
+      "type": "object",
+      "required": ["path", "kind", "size_bytes", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative path from the item directory root."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "metadata",
+            "media",
+            "media_raw",
+            "export",
+            "ocr",
+            "article",
+            "manifest",
+            "other"
+          ],
+          "description": "Classification of the file."
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of the file content (hex)."
+        },
+        "derived_from": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Paths of source files this file was derived from (if any)."
+        },
+        "transform_id": {
+          "type": "string",
+          "description": "ID of the transform that produced this file (if applicable)."
+        }
+      }
+    },
+    "transform": {
+      "type": "object",
+      "required": ["id", "step", "tool", "started_at", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier for this transform within the manifest."
+        },
+        "step": {
+          "type": "string",
+          "enum": [
+            "capture",
+            "transcode",
+            "ocr",
+            "article_md",
+            "article_pdf",
+            "fix",
+            "validate",
+            "export_agent",
+            "manifest"
+          ],
+          "description": "Type of processing step."
+        },
+        "tool": {
+          "type": "string",
+          "description": "Tool/script that performed the transform."
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["success", "warning", "error", "skipped"]
+        },
+        "inputs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Paths of input files consumed by this transform."
+        },
+        "outputs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Paths of output files produced by this transform."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Human-readable notes about this transform."
+        }
+      }
+    },
+    "trustFlags": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "has_metadata": {
+          "type": "boolean"
+        },
+        "has_media": {
+          "type": "boolean"
+        },
+        "has_exports": {
+          "type": "boolean"
+        },
+        "has_ocr": {
+          "type": "boolean"
+        },
+        "has_article": {
+          "type": "boolean"
+        },
+        "media_verified": {
+          "type": "boolean",
+          "description": "True if all declared media files exist on disk."
+        },
+        "all_files_hashed": {
+          "type": "boolean",
+          "description": "True if every file has a valid SHA-256 hash."
+        }
+      }
+    }
+  }
+}
