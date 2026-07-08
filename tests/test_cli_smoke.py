@@ -126,3 +126,17 @@ class TestUnifiedCLI:
         r = _run(CLI, [])
         # argparse with subcommands: no subcommand -> exit 2
         assert r.returncode == 2
+
+    def test_doctor_help_exits_0(self):
+        """doctor subcommand should be registered and show help."""
+        r = _run(CLI, ["doctor", "--help"])
+        assert r.returncode == 0
+        assert "doctor" in r.stdout.lower()
+
+    def test_doctor_runs_and_reports(self):
+        """doctor should run, print diagnostics, and exit 0 (warnings only, no errors)."""
+        r = _run(CLI, ["doctor"])
+        assert r.returncode == 0
+        assert "x_media_ci doctor" in r.stdout
+        assert "Python" in r.stdout
+        assert "Project layout" in r.stdout

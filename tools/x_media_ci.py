@@ -376,6 +376,150 @@ def cmd_lint(args: argparse.Namespace) -> int:
     return proc.returncode
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Check environment: Python version, external tools, and project layout.
+
+    Reports which optional dependencies are present and which are missing.
+    Exits 0 if all critical checks pass, 1 if any critical check fails.
+    """
+    import platform
+    import shutil
+    import importlib
+
+    print("=" * 60)
+    print("  x_media_ci doctor - environment diagnostics")
+    print("=" * 60)
+    print()
+
+    errors = 0
+    warnings = 0
+
+    # --- Python version ---
+    print("[Python]")
+    print(f"  Executable : {sys.executable}")
+    print(f"  Version    : {platform.python_version()}")
+    major, minor = sys.version_info[:2]
+    if major < 3 or (major == 3 and minor < 10):
+        print(f"  ⚠ Python 3.10+ recommended (you have {major}.{minor})")
+        warnings += 1
+    else:
+        print(f"  ✓ Python {major}.{minor} meets minimum (3.10)")
+    print()
+
+    # --- External tools ---
+    print("[External tools]")
+    tools_check = [
+        ("ffmpeg", "Video transcoding (optional)", "critical_optional"),
+        ("ffprobe", "Media probing (optional)", "critical_optional"),
+        ("playwright", "Web capture via Playwright", "critical_optional"),
+        ("adb", "Android device bridge (Flutter dev only)", "optional"),
+    ]
+
+    for name, desc, severity in tools_check:
+        path = shutil.which(name)
+        if path:
+            # Get version if possible
+            try:
+                result = subprocess.run(
+                    [name, "-version"], capture_output=True, text=True, timeout=5
+                )
+                version_line = result.stdout.split("\n")[0].strip()[:60]
+                print(f"  ✓ {name:12s} {version_line}")
+            except Exception:
+                print(f"  ✓ {name:12s} found at {path}")
+        else:
+            if severity == "critical_optional":
+                print(f"  ✗ {name:12s} NOT FOUND — {desc}")
+                warnings += 1
+            else:
+                print(f"  - {name:12s} not found — {desc}")
+    print()
+
+    # --- Python packages ---
+    print("[Python packages]")
+    packages_check = [
+        ("pyflakes", "Linting (dev)", True),
+        ("pytest", "Testing (dev)", True),
+        ("fastapi", "Local API server", False),
+        ("uvicorn", "ASGI server", False),
+        ("PIL", "Image processing (Pillow)", False),
+        ("fitz", "PDF generation (PyMuPDF)", False),
+    ]
+
+    for modname, desc, is_dev in packages_check:
+        try:
+            importlib.import_module(modname)
+            print(f"  ✓ {modname:12s} — {desc}")
+        except ImportError:
+            label = "(dev)" if is_dev else ""
+            print(f"  ✗ {modname:12s} NOT FOUND — {desc} {label}")
+            if is_dev:
+                warnings += 1
+            else:
+                # Non-dev packages are only needed for specific features
+                warnings += 1
+    print()
+
+    # --- Playwright browsers ---
+    print("[Playwright browsers]")
+    try:
+        from playwright.sync_api import sync_playwright
+        try:
+            with sync_playwright() as p:
+                # Just check if chromium is available
+                browser = p.chromium.launch(headless=True)
+                browser.close()
+            print("  ✓ Chromium browser installed")
+        except Exception as e:
+            print(f"  ✗ Chromium browser not installed: {e}")
+            print("    Run: python -m playwright install chromium")
+            warnings += 1
+    except ImportError:
+        print("  - playwright module not installed (skipping browser check)")
+    print()
+
+    # --- Project layout ---
+    print("[Project layout]")
+    project_root = _HERE.parent  # tools/ -> project root
+    layout_checks = [
+        ("tools/x_media_ci.py", True),
+        ("tools/scripts/ci_common.py", True),
+        ("tools/scripts/tweet_schema.py", True),
+        ("tools/scripts/tweet_validate.py", True),
+        ("tools/server/app.py", False),
+        ("tests/", True),
+        ("tests/fixtures/", True),
+        (".github/workflows/ci.yml", False),
+    ]
+
+    for rel_path, is_critical in layout_checks:
+        full_path = project_root / rel_path
+        exists = full_path.exists()
+        if exists:
+            print(f"  ✓ {rel_path}")
+        else:
+            if is_critical:
+                print(f"  ✗ {rel_path} MISSING (critical)")
+                errors += 1
+            else:
+                print(f"  - {rel_path} (optional)")
+    print()
+
+    # --- Summary ---
+    print("=" * 60)
+    if errors > 0:
+        print(f"  FAIL: {errors} critical error(s), {warnings} warning(s)")
+        print("  Fix critical errors before proceeding.")
+    elif warnings > 0:
+        print(f"  PASS with warnings: {warnings} warning(s)")
+        print("  Core functionality works. Install missing optional deps as needed.")
+    else:
+        print("  ALL CHECKS PASSED")
+    print("=" * 60)
+
+    return 1 if errors > 0 else 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     """Validate tweet.json files under a root (or for explicit dirs)."""
     sub_args = [
@@ -511,6 +655,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run pyflakes over the bundled scripts and CLI entry point.",
     )
     p_lint.set_defaults(func=cmd_lint)
+
+    # doctor -----------------------------------------------------------
+    p_doc = sub.add_parser(
+        "doctor",
+        help="Check environment: Python, external tools, and project layout.",
+    )
+    p_doc.set_defaults(func=cmd_doctor)
 
     # fix ---------------------------------------------------------------
     p_fix = sub.add_parser(
