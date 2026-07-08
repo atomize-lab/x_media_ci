@@ -400,10 +400,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print(f"  Version    : {platform.python_version()}")
     major, minor = sys.version_info[:2]
     if major < 3 or (major == 3 and minor < 10):
-        print(f"  ⚠ Python 3.10+ recommended (you have {major}.{minor})")
+        print(f"  [!] Python 3.10+ recommended (you have {major}.{minor})")
         warnings += 1
     else:
-        print(f"  ✓ Python {major}.{minor} meets minimum (3.10)")
+        print(f"  [OK] Python {major}.{minor} meets minimum (3.10)")
     print()
 
     # --- External tools ---
@@ -424,12 +424,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                     [name, "-version"], capture_output=True, text=True, timeout=5
                 )
                 version_line = result.stdout.split("\n")[0].strip()[:60]
-                print(f"  ✓ {name:12s} {version_line}")
+                print(f"  [OK] {name:12s} {version_line}")
             except Exception:
-                print(f"  ✓ {name:12s} found at {path}")
+                print(f"  [OK] {name:12s} found at {path}")
         else:
             if severity == "critical_optional":
-                print(f"  ✗ {name:12s} NOT FOUND — {desc}")
+                print(f"  [X] {name:12s} NOT FOUND — {desc}")
                 warnings += 1
             else:
                 print(f"  - {name:12s} not found — {desc}")
@@ -449,10 +449,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     for modname, desc, is_dev in packages_check:
         try:
             importlib.import_module(modname)
-            print(f"  ✓ {modname:12s} — {desc}")
+            print(f"  [OK] {modname:12s} — {desc}")
         except ImportError:
             label = "(dev)" if is_dev else ""
-            print(f"  ✗ {modname:12s} NOT FOUND — {desc} {label}")
+            print(f"  [X] {modname:12s} NOT FOUND — {desc} {label}")
             if is_dev:
                 warnings += 1
             else:
@@ -469,9 +469,9 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 # Just check if chromium is available
                 browser = p.chromium.launch(headless=True)
                 browser.close()
-            print("  ✓ Chromium browser installed")
+            print("  [OK] Chromium browser installed")
         except Exception as e:
-            print(f"  ✗ Chromium browser not installed: {e}")
+            print(f"  [X] Chromium browser not installed: {e}")
             print("    Run: python -m playwright install chromium")
             warnings += 1
     except ImportError:
@@ -496,10 +496,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         full_path = project_root / rel_path
         exists = full_path.exists()
         if exists:
-            print(f"  ✓ {rel_path}")
+            print(f"  [OK] {rel_path}")
         else:
             if is_critical:
-                print(f"  ✗ {rel_path} MISSING (critical)")
+                print(f"  [X] {rel_path} MISSING (critical)")
                 errors += 1
             else:
                 print(f"  - {rel_path} (optional)")
