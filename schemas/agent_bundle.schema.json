@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/atomize-lab/x_media_ci/raw/main/schemas/agent_bundle.schema.json",
+  "title": "Agent Bundle",
+  "description": "A stable, self-describing export of a single archived item, designed for consumption by AI agents (Claude, Hermes, Codex, etc.).",
+  "type": "object",
+  "required": [
+    "bundle_version",
+    "item_id",
+    "source_platform",
+    "source_url",
+    "captured_at",
+    "author_handle",
+    "text_excerpt",
+    "assets",
+    "provenance"
+  ],
+  "properties": {
+    "bundle_version": {
+      "description": "Version of the agent bundle spec this file conforms to.",
+      "type": "string",
+      "const": "1.0"
+    },
+    "item_id": {
+      "description": "Unique identifier for the archived item (e.g. tweet_id).",
+      "type": "string"
+    },
+    "source_platform": {
+      "description": "Platform the item was captured from.",
+      "type": "string",
+      "enum": ["x", "twitter", "web"]
+    },
+    "source_url": {
+      "description": "Original URL of the item.",
+      "type": "string",
+      "format": "uri"
+    },
+    "captured_at": {
+      "description": "ISO 8601 timestamp when the item was captured (datetime_utc from tweet.json).",
+      "type": "string"
+    },
+    "author_handle": {
+      "description": "Author handle without leading @.",
+      "type": "string"
+    },
+    "text_excerpt": {
+      "description": "Full or truncated text of the item. Truncated excerpts end with '...'.",
+      "type": "string"
+    },
+    "text_full": {
+      "description": "Full untruncated text. Omitted if same as text_excerpt.",
+      "type": "string"
+    },
+    "media": {
+      "description": "List of media assets attached to the item.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "type", "path"],
+        "properties": {
+          "file": {
+            "description": "Original filename as stored in tweet.json media[].file.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Media type.",
+            "type": "string",
+            "enum": ["image", "video", "audio", "raw"]
+          },
+          "path": {
+            "description": "Relative path to the media file within the bundle output directory.",
+            "type": "string"
+          },
+          "alt_text": {
+            "description": "Alt text or description of the media, if available.",
+            "type": "string"
+          },
+          "sha256": {
+            "description": "SHA-256 hash of the media file, if computed.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ocr_text": {
+      "description": "Full OCR text extracted from media, if available.",
+      "type": "string"
+    },
+    "article_md_path": {
+      "description": "Relative path to the article markdown file within the bundle, if available.",
+      "type": "string"
+    },
+    "assets": {
+      "description": "List of all files included in the bundle output directory.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "kind"],
+        "properties": {
+          "path": {
+            "description": "Relative path within the bundle directory.",
+            "type": "string"
+          },
+          "kind": {
+            "description": "Type of asset.",
+            "type": "string",
+            "enum": [
+              "metadata",
+              "media",
+              "ocr",
+              "article",
+              "export",
+              "context",
+              "manifest"
+            ]
+          },
+          "size_bytes": {
+            "description": "File size in bytes, if available.",
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "citation_label": {
+      "description": "Suggested citation label for the item (e.g. '@example_user, 2026-07-08').",
+      "type": "string"
+    },
+    "trust_flags": {
+      "description": "Flags indicating data quality and completeness.",
+      "type": "object",
+      "properties": {
+        "validated": {
+          "description": "Whether the source tweet.json passed schema validation.",
+          "type": "boolean"
+        },
+        "has_media": {
+          "description": "Whether the item has media attachments.",
+          "type": "boolean"
+        },
+        "has_ocr": {
+          "description": "Whether OCR text is available.",
+          "type": "boolean"
+        },
+        "has_article": {
+          "description": "Whether an article markdown is available.",
+          "type": "boolean"
+        },
+        "media_verified": {
+          "description": "Whether all declared media files exist on disk.",
+          "type": "boolean"
+        }
+      }
+    },
+    "provenance": {
+      "description": "Provenance metadata about the capture and export process.",
+      "type": "object",
+      "required": ["exported_at", "export_tool"],
+      "properties": {
+        "exported_at": {
+          "description": "ISO 8601 timestamp when the bundle was exported.",
+          "type": "string"
+        },
+        "export_tool": {
+          "description": "Name and version of the tool that produced the bundle.",
+          "type": "string"
+        },
+        "source_dir": {
+          "description": "Original directory path the bundle was exported from.",
+          "type": "string"
+        },
+        "schema_version": {
+          "description": "Version of the tweet.json schema the source conforms to.",
+          "type": "string"
+        }
+      }
+    },
+    "related_items": {
+      "description": "List of related item IDs (e.g. reply threads, quote tweets).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item_id", "relation"],
+        "properties": {
+          "item_id": { "type": "string" },
+          "relation": {
+            "type": "string",
+            "enum": ["reply", "quote", "retweet", "thread"]
+          }
+        }
+      }
+    }
+  }
+}

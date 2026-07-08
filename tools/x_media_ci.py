@@ -564,6 +564,21 @@ def cmd_transcode(args: argparse.Namespace) -> int:
     return _run_script("transcode_to_mp4.py", sub_args)
 
 
+def cmd_export_agent(args: argparse.Namespace) -> int:
+    """Export a tweet directory as an agent bundle."""
+    sub_args = [
+        "--tweet-dir", str(args.tweet_dir),
+        "--output", str(args.output),
+    ]
+    if args.hash_media:
+        sub_args.append("--hash-media")
+    if args.no_overwrite:
+        sub_args.append("--no-overwrite")
+    if args.max_excerpt is not None:
+        sub_args += ["--max-excerpt", str(args.max_excerpt)]
+    return _run_script("build_agent_bundle.py", sub_args)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="x_media_ci",
@@ -696,6 +711,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_tr.add_argument("--verbose", action="store_true",
                       help="Print extra info for skipped files.")
     p_tr.set_defaults(func=cmd_transcode)
+
+    # export-agent ------------------------------------------------------
+    p_ea = sub.add_parser(
+        "export-agent",
+        help="Export a tweet directory as an agent bundle (bundle.json + media).",
+    )
+    p_ea.add_argument("--tweet-dir", required=True,
+                      help="Source tweet directory (must contain tweet.json).")
+    p_ea.add_argument("--output", "-o", required=True,
+                      help="Output directory for the agent bundle.")
+    p_ea.add_argument("--max-excerpt", type=int, default=None,
+                      help="Maximum text excerpt length (default: 280).")
+    p_ea.add_argument("--hash-media", action="store_true",
+                      help="Compute SHA-256 hashes for media files.")
+    p_ea.add_argument("--no-overwrite", action="store_true",
+                      help="Do not remove existing output directory.")
+    p_ea.set_defaults(func=cmd_export_agent)
 
     return p
 

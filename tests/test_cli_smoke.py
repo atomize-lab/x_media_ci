@@ -140,3 +140,52 @@ class TestUnifiedCLI:
         assert "x_media_ci doctor" in r.stdout
         assert "Python" in r.stdout
         assert "Project layout" in r.stdout
+
+
+# ── export-agent ────────────────────────────────────────────────────────────
+
+class TestExportAgentCLI:
+    def test_export_agent_help_exits_0(self):
+        """export-agent subcommand should be registered and show help."""
+        r = _run(CLI, ["export-agent", "--help"])
+        assert r.returncode == 0
+        assert "export-agent" in r.stdout.lower()
+        assert "bundle" in r.stdout.lower()
+
+    def test_export_agent_no_args_exits_2(self):
+        r = _run(CLI, ["export-agent"])
+        assert r.returncode == 2
+
+    def test_export_agent_creates_bundle(self, tmp_path: Path):
+        """export-agent should create a valid bundle.json in the output dir."""
+        out = tmp_path / "bundle_out"
+        r = _run(CLI, [
+            "export-agent",
+            "--tweet-dir", str(GOOD_DIR),
+            "--output", str(out),
+            "--hash-media",
+        ])
+        assert r.returncode == 0
+        assert (out / "bundle.json").is_file()
+
+        # Verify the bundle is valid JSON with expected fields
+        import json
+        data = json.loads((out / "bundle.json").read_text("utf-8"))
+        assert data["bundle_version"] == "1.0"
+        assert data["item_id"] == "1234567890"
+        assert data["author_handle"] == "example_user"
+
+    def test_export_agent_media_copied(self, tmp_path: Path):
+        """export-agent should copy media files into the bundle."""
+        out = tmp_path / "bundle_out"
+        r = _run(CLI, [
+            "export-agent",
+            "--tweet-dir", str(GOOD_DIR),
+            "--output", str(out),
+        ])
+        assert r.returncode == 0
+        # The good fixture has 2 images
+        media_dir = out / "media"
+        assert media_dir.is_dir()
+        copied = list(media_dir.iterdir())
+        assert len(copied) == 2
