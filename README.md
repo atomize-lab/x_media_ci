@@ -1,54 +1,55 @@
 # X Media CI
 
-**Local-first X/Twitter media archiver for AI-agent content workflows.**
+**Local-first, auditable, agent-ready research archive infrastructure.**
 
-X Media CI turns public X/Twitter posts that you can already access into a durable local archive: text, images, videos, metadata, OCR/export artifacts, and JSONL indices that humans and AI agents can search later.
+X Media CI captures fragile web content — posts, images, videos, metadata — and turns it into structured, verifiable, local artifacts that humans and AI agents can consume long after the original page changes or disappears.
 
-It is designed for builders who use X as a research, product, market, or content signal source and need a reproducible way to preserve useful posts before they disappear from the feed.
+It is designed for builders who use social media as a research, product, or market signal source and need a reproducible way to preserve useful content as a **durable local evidence layer** — not a one-off screenshot or a clipboard paste.
 
 ![X Media CI architecture](docs/assets/architecture.svg)
 
-> Status: early-stage but functional. The current repo includes a Playwright-based X capture tool, a structured storage layout, Markdown/PDF/OCR/export helpers, a FastAPI local server, GitHub Actions validation, and a Flutter client skeleton for mobile/desktop browsing.
+> **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, GitHub Actions CI, 88 passing tests, and a Flutter client skeleton for mobile/desktop review.
 
 ---
 
 ## Why this exists
 
-X is full of useful but fragile context:
+Web content is fragile. Posts get deleted, media links expire, threads fragment, and AI agents that try to read live pages get unstable, inconsistent context.
 
-- product launches and demos
-- agent/coding-tool workflows
-- technical threads
-- screenshots, videos, charts, and replies
-- early signals for opportunity research and content creation
+X Media CI solves this by capturing content into a **stable local format** with:
 
-Normal bookmarks are not enough. They do not preserve media reliably, are hard to batch-process, and are not friendly to AI agents.
+- structured metadata (`tweet.json`) and JSONL indices
+- media saved at original quality where possible
+- OCR/PDF/Markdown derived exports
+- schema validation and fix-up tooling
+- a local HTTP API for cross-device and agent access
 
-X Media CI stores each captured post as a small local package with stable metadata and indices, so later tools can:
-
-- search by handle, date, tag, or tweet ID
-- run OCR/export jobs
-- turn posts into Markdown/PDF research notes
-- browse archived posts from a phone
-- feed selected items into AI-agent review, summary, and content pipelines
+The archive is filesystem-native, easy to back up, and friendly to shell tools, Python scripts, and AI-agent batch processing.
 
 ---
 
-## What it does
+## Three core capabilities
 
-| Capability | Current state |
+| Capability | What it does |
 |---|---|
-| Capture a single X status URL | Implemented in `tools/fetch_x.py` |
-| Capture recent posts from a timeline | Implemented in `tools/fetch_x.py timeline` |
-| Save text + metadata | Implemented via `tweet.json` |
-| Save images | Implemented, prefers original-size `pbs.twimg.com` media |
-| Save video | Implemented best-effort, with MP4/HLS handling and optional `ffmpeg` |
-| Maintain JSONL indices | Implemented: global, by-handle, by-date |
-| Export to Markdown/PDF | Implemented for landed content |
-| OCR screenshots / long images | Implemented helpers |
-| Local HTTP API | Implemented FastAPI server under `tools/server/` |
-| Mobile/desktop client | Flutter app skeleton under `tools/app/`; browse/remote/edit flows are started, local-device fetch is WIP |
-| CI validation | GitHub Actions for Python lint/validation on Ubuntu + Windows |
+| **Capture** | Playwright-based acquisition of single posts or timeline samples using your own authorized browser session. Text, images, video, metadata, and source URLs are saved with SHA-256 hashes. |
+| **Validate** | Schema-driven validation and fix-up of every archived item. `tweet.json` is the single source of truth; derived artifacts (OCR, PDF, Markdown) are traceable exports, not opaque blobs. |
+| **Agent-ready export** | JSONL indices, structured item directories, and Markdown exports that AI agents can read, search, and cite without browsing the web. Agents consume the archive output as a stable context layer. |
+
+---
+
+## Who this is for
+
+- **AI-agent / research workflow builders** who need a stable local corpus instead of fragile live-web scraping
+- **Researchers** tracking public technical discussions who want reproducible, citable evidence
+- **Developers** building content pipelines that need structured source material with provenance
+- **Maintainers** who want reproducible evidence and exports for notes, docs, and reports
+
+## Who this is not for
+
+- People looking for a bulk scraping service or API bypass
+- People who want to redistribute third-party media
+- People who need commercial-scale ingestion or automated engagement
 
 ---
 
@@ -58,93 +59,13 @@ This project is **local-first** and intended for personal research, documentatio
 
 X Media CI does **not** provide an API bypass, credential bypass, paywall bypass, or public scraping service. Use it only for content you are authorized to access, with your own browser session, and respect platform terms, copyright, privacy, and deletion requests.
 
-See [`SECURITY.md`](SECURITY.md) for the security and responsible-use policy.
-
----
-
-## Repository layout
-
-```text
-.
-├── README.md
-├── SECURITY.md
-├── docs/
-│   ├── vision.md
-│   ├── architecture.md
-│   └── roadmap.md
-└── tools/
-    ├── fetch_x.py              # Playwright X capture: URL + timeline
-    ├── fetch_tweet.py          # Compatibility wrapper for desktop GUI
-    ├── x_media_ci.py           # Unified CLI for export/validate/batch operations
-    ├── scripts/                # Markdown/PDF/OCR/transcode/schema helpers
-    ├── server/                 # FastAPI local API for phone/desktop clients
-    ├── app/                    # Flutter client skeleton
-    ├── android/                # adb sync + local serve helpers
-    └── examples/               # Example configs and pipeline scripts
-```
-
-The archive data itself is usually stored outside the repo or under a local `accounts/` tree. Do not commit third-party media by default.
-
----
-
-## Archive format
-
-X Media CI stores each post as an independent directory:
-
-```text
-x_media/CI/
-  accounts/
-    <handle>/
-      profile.json
-      tweets/
-        YYYY/
-          YYYY-MM/
-            <YYYYMMDDThhmmssZ>_<tweet_id>/
-              tweet.json
-              exports/
-              media/
-                images/
-                video/
-                audio/
-                raw/
-              replies/
-                author_replies.jsonl
-  indices/
-    tweets.jsonl
-    by_handle/<handle>.jsonl
-    by_date/YYYY/YYYY-MM.jsonl
-```
-
-### `tweet.json` core fields
-
-```json
-{
-  "tweet_id": "...",
-  "tweet_url": "https://x.com/<handle>/status/<id>",
-  "author_handle": "<handle>",
-  "datetime_utc": "2026-06-27T00:00:00Z",
-  "datetime_beijing": "2026-06-27T08:00:00+08:00",
-  "text": "...",
-  "media": [
-    {
-      "type": "image",
-      "file": "media/images/example.jpg",
-      "sha256": "...",
-      "source_url": "https://pbs.twimg.com/media/..."
-    }
-  ],
-  "components": {},
-  "exports": []
-}
-```
-
-JSONL indices make the archive friendly to shell tools, Python scripts, local search, and AI-agent batch processing.
+See [`SECURITY.md`](SECURITY.md) for the full security and responsible-use policy.
 
 ---
 
 ## Quick start
 
-### 1. Install Python dependencies
+### 1. Install dependencies
 
 ```bash
 cd tools
@@ -201,7 +122,56 @@ adb reverse tcp:8765 tcp:8765
 # phone uses http://127.0.0.1:8765
 ```
 
-See [`tools/server/README.md`](tools/server/README.md), [`tools/app/README.md`](tools/app/README.md), and [`tools/android/README.md`](tools/android/README.md).
+---
+
+## Archive format
+
+Each captured post is an independent, self-describing directory:
+
+```text
+accounts/<handle>/tweets/YYYY/YYYY-MM/<timestamp>_<tweet_id>/
+  tweet.json          # canonical source of truth
+  media/
+    images/
+    video/
+    audio/
+    raw/
+  exports/            # derived: Markdown, PDF, OCR
+  replies/
+    author_replies.jsonl
+```
+
+JSONL indices make the archive friendly to shell tools, Python scripts, local search, and AI-agent batch processing:
+
+```text
+indices/
+  tweets.jsonl
+  by_handle/<handle>.jsonl
+  by_date/YYYY/YYYY-MM.jsonl
+```
+
+### `tweet.json` core fields
+
+```json
+{
+  "tweet_id": "...",
+  "tweet_url": "https://x.com/<handle>/status/<id>",
+  "author_handle": "<handle>",
+  "datetime_utc": "2026-06-27T00:00:00Z",
+  "datetime_beijing": "2026-06-27T08:00:00+08:00",
+  "text": "...",
+  "media": [
+    {
+      "type": "image",
+      "file": "media/images/example.jpg",
+      "sha256": "...",
+      "source_url": "https://pbs.twimg.com/media/..."
+    }
+  ],
+  "components": {},
+  "exports": []
+}
+```
 
 ---
 
@@ -209,7 +179,7 @@ See [`tools/server/README.md`](tools/server/README.md), [`tools/app/README.md`](
 
 | Command | Purpose |
 |---|---|
-| `tools/fetch_x.py url --url ...` | Capture one X post |
+| `tools/fetch_x.py url --url ...` | Capture one post |
 | `tools/fetch_x.py timeline --handle ...` | Discover and capture recent timeline posts |
 | `tools/x_media_ci.py md --tweet-dir ...` | Generate Markdown from landed metadata/extracts |
 | `tools/x_media_ci.py pdf --tweet-dir ...` | Generate PDF |
@@ -220,89 +190,91 @@ See [`tools/server/README.md`](tools/server/README.md), [`tools/app/README.md`](
 
 ---
 
-## Use cases
+## Repository layout
 
-### AI-agent memory and research
+```text
+.
+├── README.md
+├── SECURITY.md
+├── CONTRIBUTING.md
+├── docs/
+│   ├── vision.md
+│   ├── architecture.md
+│   ├── roadmap.md
+│   ├── agent-integration.md
+│   └── use-cases.md
+├── tests/               # 88 pytest tests, synthetic fixtures
+├── .github/workflows/   # CI: lint + validate + pytest (Ubuntu + Windows)
+└── tools/
+    ├── fetch_x.py              # Playwright X capture: URL + timeline
+    ├── x_media_ci.py           # Unified CLI for export/validate/batch operations
+    ├── scripts/                # Markdown/PDF/OCR/transcode/schema helpers
+    ├── server/                 # FastAPI local API for phone/desktop clients
+    ├── app/                    # Flutter client skeleton
+    ├── android/                # adb sync + local serve helpers
+    └── examples/               # Example configs and pipeline scripts
+```
 
-Archive high-signal posts and media so agents can later summarize, classify, compare, and cite them without repeatedly browsing X.
-
-### Content and media workflows
-
-Preserve source material for review-first content pipelines: screenshots, videos, text, metadata, and export notes live together.
-
-### Opportunity and product research
-
-Store launches, demos, and founder/build-in-public threads as a structured local case library.
-
-### Mobile review
-
-Run capture/export on a PC, then browse and trigger jobs from Android or desktop through the local FastAPI server and Flutter client.
+The archive data itself is usually stored outside the repo or under a local `accounts/` tree. Do not commit third-party media by default.
 
 ---
 
 ## Documentation
 
-- [`docs/vision.md`](docs/vision.md) — project positioning and long-term direction
-- [`docs/architecture.md`](docs/architecture.md) — capture/storage/server/mobile architecture
-- [`docs/roadmap.md`](docs/roadmap.md) — practical milestones toward a strong v1
-- [`SECURITY.md`](SECURITY.md) — security and responsible-use policy
+| Document | Description |
+|---|---|
+| [`docs/vision.md`](docs/vision.md) | Project positioning and long-term direction |
+| [`docs/architecture.md`](docs/architecture.md) | Capture / storage / export / access architecture |
+| [`docs/agent-integration.md`](docs/agent-integration.md) | How AI agents consume the archive as a context layer |
+| [`docs/use-cases.md`](docs/use-cases.md) | Real-world scenarios and workflows |
+| [`docs/roadmap.md`](docs/roadmap.md) | Milestones toward a stable v1 |
+| [`SECURITY.md`](SECURITY.md) | Security and responsible-use policy |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute |
 
 ---
 
 ## Development
 
-Run Python syntax checks:
-
 ```bash
-python -m py_compile tools/fetch_x.py tools/x_media_ci.py tools/server/app.py tools/scripts/*.py
+# Install dev dependencies
+python -m pip install -r requirements-dev.txt
+
+# Run the full test suite
+python -m pytest tests/ -v
+
+# Lint
+cd tools && python x_media_ci.py lint && cd ..
+
+# Validate test fixtures
+python tools/scripts/tweet_validate.py \
+  tests/fixtures/accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890
 ```
 
-Run the existing CI-style lint entry:
-
-```bash
-cd tools
-python x_media_ci.py lint
-```
-
-Run validation when you have a local archive:
-
-```bash
-python tools/x_media_ci.py validate --root ./x_media/CI/accounts
-```
+All three must pass before pushing. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
 
 ---
 
 ## Roadmap snapshot
 
-Near-term priorities:
+**Near-term (grant-relevant):**
 
-- stable unified CLI aliases (`xmc fetch`, `xmc timeline`, `xmc serve`)
-- fixture-based tests without committing third-party media
-- README screenshots / short demo GIF
-- safer default capture limits and clearer error messages
-- Flutter browse/detail screens with image/video preview
-- documented plugin points for AI-agent summarization and tagging
+- Agent bundle spec (`agent_bundle.schema.json`) and `xmc export-agent` command
+- Provenance manifest layer (capture environment, hashes, transform trace)
+- FastAPI agent-access endpoints
+- Claude/Hermes/Codex consumption cookbook
+- v0.1.0 tagged release
 
-See [`docs/roadmap.md`](docs/roadmap.md).
+**Long-term backlog:**
+
+- Unified CLI aliases (`xmc fetch`, `xmc timeline`, `xmc serve`, `xmc doctor`)
+- Thread/reply capture, bookmark import
+- Local full-text search (SQLite FTS)
+- Plugin hooks for AI-agent summarization and tagging
+
+See [`docs/roadmap.md`](docs/roadmap.md) for the full plan.
 
 ---
 
 ## License
 
 MIT. See [`LICENSE`](LICENSE).
-
----
-
-## Project description for GitHub
-
-Suggested GitHub description:
-
-```text
-Local-first X/Twitter media archiver for AI-agent content workflows: save posts, images, videos, metadata, OCR/PDF exports, and JSONL indices.
-```
-
-Suggested topics:
-
-```text
-x twitter archive media-archiver local-first ai-agents playwright fastapi flutter ocr content-workflow research-tools
-```

@@ -1,119 +1,160 @@
 # Roadmap
 
-This roadmap is intentionally practical. The goal is to make X Media CI credible as a small but real open-source project, not to overbuild a platform.
+This roadmap is split into two tracks:
 
-## v0.1 — Existing foundation
+- **Grant-relevant track** — work that directly strengthens the project's position as a local-first, auditable, agent-ready research archive infrastructure. These are the highest-priority items.
+- **Long-term backlog** — valuable but not time-critical. These can be deferred until after the core agent-ready layer is stable.
 
-Already present:
+## Current state (v0.1 foundation)
 
-- Playwright capture for URL and timeline workflows
-- local archive directory convention
-- `tweet.json` metadata records
-- image/video best-effort saving
-- JSONL indices
-- Markdown/PDF/OCR/transcode helpers
-- FastAPI local server
-- Flutter app skeleton
-- GitHub Actions lint/validation workflow
+Already present and tested:
 
-## v0.2 — Make the project usable by a new user
+- Playwright capture for URL and timeline workflows (`tools/fetch_x.py`)
+- Structured storage with `tweet.json` schema and validation
+- Image/video saving with SHA-256 media hashes
+- JSONL indices (global, by-handle, by-date)
+- Markdown/PDF/OCR/transcode export helpers
+- FastAPI local server with 9 endpoints
+- Flutter client skeleton (browse/remote/edit flows)
+- GitHub Actions CI: lint + fixture validation + pytest (Ubuntu + Windows)
+- 88 passing tests with fully synthetic fixtures (no third-party media)
+- CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
+- docs: vision.md, architecture.md, agent-integration.md, use-cases.md
 
-Priority: documentation, examples, and safe defaults.
+---
 
-- [ ] Add a clear repository license.
-- [ ] Add a demo screenshot/GIF to the README.
-- [ ] Add a tiny synthetic fixture that contains no third-party media.
-- [ ] Add `tests/fixtures/` and CI validation against the fixture.
-- [ ] Add a single command quickstart script for local validation.
-- [ ] Add GitHub repository description and topics.
-- [ ] Add clearer Playwright login/profile instructions.
-- [ ] Add responsible-use checks and warnings in capture commands.
+## Grant-relevant track
 
-## v0.3 — Unified CLI
+These milestones build the agent-ready evidence layer that defines the project's core value.
 
-Priority: reduce the number of entry points users need to remember.
+### v0.2 — Narrative and maintainability (Week 1-2)
 
-Target command shape:
+Make the project instantly understandable and visibly maintained.
 
-```bash
-xmc fetch <status-url>
-xmc timeline <handle> --limit 20
-xmc validate <archive-root>
-xmc export <tweet-dir> --format md,pdf
-xmc serve --root <archive-root>
-```
+- [x] Rewrite README with new positioning (local-first, auditable, agent-ready)
+- [x] Add `docs/agent-integration.md`
+- [x] Add `docs/use-cases.md`
+- [ ] Add issue/PR templates (`.github/ISSUE_TEMPLATE/`, `pull_request_template.md`)
+- [ ] Add `CHANGELOG.md` and v0.1.0 release draft
+- [ ] Add `Makefile` or `justfile` (test, lint, validate-fixtures, serve, smoke-cli)
+- [ ] Add `xmc doctor` command (check ffmpeg, playwright, adb, Python deps, directory structure)
+- [ ] Add Maintainer section to README
 
-Tasks:
+### v0.3 — Agent bundle spec and export (Week 3)
 
-- [ ] Add a package-level CLI wrapper.
-- [ ] Preserve existing `tools/fetch_x.py` and `tools/x_media_ci.py` compatibility.
-- [ ] Normalize exit codes and error messages.
-- [ ] Add dry-run and no-media modes.
-- [ ] Add capture summary output in JSON.
+Define the stable product that agents consume.
 
-## v0.4 — Better archive quality
+- [ ] Add `schemas/agent_bundle.schema.json` (version, item_id, source_platform, source_url, captured_at, author_handle, text_excerpt, media, ocr_text, article_md_path, citation_label, trust_flags, provenance, related_items)
+- [ ] Add `docs/agent-bundle-spec.md`
+- [ ] Implement `tools/scripts/build_agent_bundle.py`
+- [ ] Add `xmc export-agent` CLI command
+- [ ] Add `tools/examples/agent/minimal_bundle/` example
+- [ ] Add tests for bundle generation and schema validation
 
-Priority: make archived records easier to trust and reuse.
+### v0.4 — Provenance and manifest layer (Week 4)
 
-- [ ] Add media SHA256 hashing consistently.
-- [ ] Record capture environment and tool version.
-- [ ] Add duplicate URL/tweet detection before downloading media.
-- [ ] Add a repair command for missing indices.
-- [ ] Add a manifest format for portable archive bundles.
-- [ ] Add optional tags and notes sidecar files.
+Make every archived item traceable from capture to export.
 
-## v0.5 — Mobile review loop
+- [ ] Add `schemas/manifest.schema.json` (capture_tool_version, capture_mode, browser_context, downloaded_assets, sha256, transforms_applied, validation_status, created_at)
+- [ ] Implement `tools/scripts/build_manifest.py`
+- [ ] Add transform trace fields to capture/transcode/OCR scripts
+- [ ] Add `docs/provenance.md`
 
-Priority: make phone usage real without moving X login to the phone.
+### v0.5 — Agent-access API (Week 5)
 
-- [ ] Finish Flutter browse/detail screens.
-- [ ] Add image preview and video open/play support.
-- [ ] Add remote job trigger UX for `md`, `pdf`, `ocr`, `transcode`, and `validate`.
-- [ ] Add server URL persistence and connection health indicator.
-- [ ] Add Android USB `adb reverse` quickstart docs with screenshots.
+Strengthen FastAPI as a query and export interface for agents.
 
-## v0.6 — AI-agent integration
+- [ ] Add `GET /api/index/items` (structured item list for agent consumption)
+- [ ] Add `GET /api/item/{id}/context` (agent-readable context for an item)
+- [ ] Add `POST /api/export/agent_bundle` (batch bundle export)
+- [ ] Add `POST /api/validate/item/{id}` (on-demand validation)
+- [ ] Add API tests (`tests/server/test_app_api.py`, `tests/server/test_agent_export.py`)
+- [ ] Update `docs/architecture.md` with agent-access layer
 
-Priority: make the archive easy for AI agents to consume safely.
+### v0.6 — Agent consumption cookbook (Week 6)
 
-- [ ] Add a stable `selected_items.jsonl` export format.
-- [ ] Add summary/tag sidecar schema.
-- [ ] Add examples for agent workflows: summarize, classify, create case notes.
-- [ ] Add local-only API endpoints for query/search.
-- [ ] Add optional SQLite FTS index while preserving JSONL as the source of truth.
+Prove that Claude, Hermes, and Codex can consume the archive in real workflows.
 
-## v1.0 — Stable local-first archive toolkit
+- [ ] Add `docs/cookbook-claude.md` (how Claude reads the archive for summarization/citation)
+- [ ] Add `docs/cookbook-hermes.md` (how Hermes builds trend reports from the archive)
+- [ ] Add `tools/examples/agent/claude_prompt_example.md`
+- [ ] Add `tools/examples/agent/hermes_workflow.md`
+- [ ] Add `tools/examples/agent/http_client_example.py`
+- [ ] Document what agents should NOT do (no bulk scraping, no redistribution)
 
-v1.0 should mean:
+### v0.7 — First public release (Week 7)
 
-- clear install path;
-- repeatable capture of single URL and small timelines;
-- durable archive schema;
-- validation and repair tools;
-- local server and mobile browsing path;
-- docs that a new user can follow;
-- tests that run without real X credentials or third-party media.
+- [ ] Tag v0.1.0 with release notes and known limitations
+- [ ] Add README Quickstart with minimal demo data flow
+- [ ] Add "good first issue" labels and contribution areas
+- [ ] Add Architecture Decision Records (`docs/adr/0001-agent-bundle.md`, `docs/adr/0002-local-first-boundary.md`)
 
-## Backlog
+### v1.0 — Stable agent-ready archive (Week 11-12)
 
-- richer thread/reply capture
-- bookmark/import workflows
-- browser extension or share-sheet integration
-- OCR language profiles
-- deduplicated media store
-- local vector search
-- desktop packaging
-- Android packaging
-- plugin hooks for AI summarization
+- [ ] Freeze agent bundle v1 schema
+- [ ] Freeze core API endpoints
+- [ ] Add migration notes
+- [ ] Full test suite green
+- [ ] Complete documentation navigation
+- [ ] Release candidate with honest known-limitations list
 
-## Contribution guide draft
+---
 
-Good first issues:
+## Long-term backlog
 
-- improve README screenshots
-- add fixture tests
+Valuable but not on the critical path. Pursue after the agent-ready layer is stable or when community demand emerges.
+
+### Unified CLI
+
+- [ ] `xmc fetch`, `xmc timeline`, `xmc validate`, `xmc fix`, `xmc manifest`, `xmc serve`
+- [ ] Dry-run and no-media modes
+- [ ] Capture summary output in JSON
+- [ ] Normalize exit codes and error messages
+
+### Archive quality
+
+- [ ] Duplicate URL/tweet detection before downloading media
+- [ ] Repair command for missing indices
+- [ ] Optional tags and notes sidecar files
+- [ ] Deduplicated media store
+
+### Mobile review loop
+
+- [ ] Finish Flutter browse/detail screens
+- [ ] Image preview and video playback
+- [ ] Remote job trigger UX for md/pdf/ocr/transcode/validate
+- [ ] Server URL persistence and connection health indicator
+- [ ] Android USB `adb reverse` quickstart docs
+
+### Search and discovery
+
+- [ ] Local full-text search (SQLite FTS) while preserving JSONL as source of truth
+- [ ] Local vector search / embedding index
+- [ ] Tagging/classification sidecars
+
+### Capture extensions
+
+- [ ] Richer thread/reply capture
+- [ ] Bookmark/import workflows
+- [ ] Browser extension or share-sheet integration
+- [ ] OCR language profiles
+- [ ] Multi-platform support (beyond X/Twitter)
+
+### Platform and packaging
+
+- [ ] Desktop packaging (PyInstaller)
+- [ ] Android packaging
+- [ ] Plugin hooks for AI summarization and tagging
+
+---
+
+## Good first issues
+
+- improve README screenshots / demo GIF
+- add fixture tests for edge cases
 - improve validation error messages
-- add a small schema reference page
+- add a schema reference page
 - document Windows/WSL setup
 - improve Flutter tweet detail UI
 - add sample archive generator
+- add OCR language profile examples
