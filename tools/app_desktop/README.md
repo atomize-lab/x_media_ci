@@ -93,7 +93,7 @@ you already downloaded by hand.
 
 Use any URL you've already downloaded into `accounts/`:
 
-1. `Save to` = `C:\Users\champ\Documents\Solo\x_media\CI\accounts`
+1. `Save to` = `<your_local_path>/x_media_ci/accounts`
 2. Paste: `https://x.com/0x_Discover/status/2045052337996157219`
 3. Click **Fetch** — the log should say "found existing dir"
 4. Click **Save ALL** — it produces a fresh `*_full.md` / `*_full.pdf`

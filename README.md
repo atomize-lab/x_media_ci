@@ -297,9 +297,9 @@ The maintainer uses AI coding assistants for:
 - Issue triage and classification
 - Schema evolution planning
 
-These are exactly the workflows that benefit from sustained Claude Max access,
-and the project is structured to serve as a real testbed for agent-ready
-archive consumption.
+These are exactly the workflows that benefit from sustained access to
+Claude and similar models, and the project is structured to serve as a
+real testbed for agent-ready archive consumption.
 
 ---
 
