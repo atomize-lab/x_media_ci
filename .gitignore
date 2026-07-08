@@ -24,3 +24,7 @@ tools/dist/
 .venv/
 .pytest_cache/
 
+
+# Internal application materials - do not commit
+docs/anthropic-grant-application.md
+docs/anthropic-grant-plan.md
