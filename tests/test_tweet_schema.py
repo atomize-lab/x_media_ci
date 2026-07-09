@@ -184,7 +184,7 @@ class TestWriteTweetJson:
             "tweet_url": "https://x.com/test_user/status/9999999999",
             "author_handle": "test_user",
             "datetime_utc": "2026-07-08T12:00:00Z",
-            "datetime_beijing": "2026-07-08T20:00:00+08:00",
+            "datetime_local": "2026-07-08T20:00:00+08:00",
             "text": "Round-trip test.",
             "media": [],
             "exports": [],

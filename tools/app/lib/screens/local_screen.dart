@@ -736,7 +736,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
         "tweet_url": _url,
         "author_handle": _handle,
         "datetime_utc": _dtUtc.isEmpty ? dtp.toUtc().toIso8601String() : _dtUtc,
-        "datetime_beijing": _toBeijingIso(dtp),
+        "datetime_local": _toLocalIso(dtp),
         "fetched_at": DateTime.now().toUtc().toIso8601String().split("T").first,
         "text": _text,
         "media": media,
@@ -791,14 +791,14 @@ DateTime? _parseIso(String s) {
   }
 }
 
-String _toBeijingIso(DateTime dtUtc) {
-  final bj = dtUtc.toUtc().add(const Duration(hours: 8));
-  final y = bj.year.toString().padLeft(4, "0");
-  final m = bj.month.toString().padLeft(2, "0");
-  final d = bj.day.toString().padLeft(2, "0");
-  final hh = bj.hour.toString().padLeft(2, "0");
-  final mm = bj.minute.toString().padLeft(2, "0");
-  final ss = bj.second.toString().padLeft(2, "0");
+String _toLocalIso(DateTime dtUtc) {
+  final local = dtUtc.toUtc().add(const Duration(hours: 8));
+  final y = local.year.toString().padLeft(4, "0");
+  final m = local.month.toString().padLeft(2, "0");
+  final d = local.day.toString().padLeft(2, "0");
+  final hh = local.hour.toString().padLeft(2, "0");
+  final mm = local.minute.toString().padLeft(2, "0");
+  final ss = local.second.toString().padLeft(2, "0");
   return "$y-$m-$d" "T$hh:$mm:$ss+08:00";
 }
 

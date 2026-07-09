@@ -158,7 +158,7 @@ indices/
   "tweet_url": "https://x.com/<handle>/status/<id>",
   "author_handle": "<handle>",
   "datetime_utc": "2026-06-27T00:00:00Z",
-  "datetime_beijing": "2026-06-27T08:00:00+08:00",
+  "datetime_local": "2026-06-27T08:00:00+08:00",
   "text": "...",
   "media": [
     {
@@ -280,7 +280,7 @@ See [`docs/roadmap.md`](docs/roadmap.md) for the full plan.
 
 ## Maintainer
 
-This project is maintained by **champ** ([GitHub](https://github.com/champ)).
+This project is maintained by **atomize-lab** ([GitHub](https://github.com/atomize-lab)).
 
 It is an independent, personal research tool. All commits use the maintainer's
 real GitHub identity, not an AI bot account. AI assistants (Claude, Hermes)

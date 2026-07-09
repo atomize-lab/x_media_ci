@@ -70,10 +70,9 @@ def _utc_now_iso() -> str:
     return _dt.datetime.now(tz=_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _to_beijing_iso(dt_utc: _dt.datetime) -> str:
-    bj = dt_utc.astimezone(_dt.timezone(_dt.timedelta(hours=8)))
-    # 2026-05-25T18:29:28+08:00
-    return bj.replace(microsecond=0).isoformat()
+def _to_local_iso(dt_utc: _dt.datetime) -> str:
+    local = dt_utc.astimezone(_dt.timezone(_dt.timedelta(hours=8)))
+    return local.replace(microsecond=0).isoformat()
 
 
 def _parse_iso_datetime(dt: str) -> Optional[_dt.datetime]:
@@ -622,7 +621,7 @@ def _update_indices(ci_root: Path, tweet_dir: Path, meta: dict) -> None:
     tid = meta.get("tweet_id", "")
     handle = (meta.get("author_handle", "") or "").lstrip("@")
     dt_utc = meta.get("datetime_utc", "")
-    dt_bj = meta.get("datetime_beijing", "")
+    dt_bj = meta.get("datetime_local", "")
     text = meta.get("text", "") or ""
     media = meta.get("media") or []
     exports = meta.get("exports") or []
@@ -636,7 +635,7 @@ def _update_indices(ci_root: Path, tweet_dir: Path, meta: dict) -> None:
         "tweet_url": meta.get("tweet_url", ""),
         "author_handle": meta.get("author_handle", ""),
         "datetime_utc": dt_utc,
-        "datetime_beijing": dt_bj,
+        "datetime_local": dt_bj,
         "folder": _rel_to_ci(ci_root, tweet_dir),
         "tweet_json": _rel_to_ci(ci_root, tweet_dir / "tweet.json"),
         "text_preview": (text[:80] + "…") if len(text) > 80 else text,
@@ -798,7 +797,7 @@ def fetch_one(context, url: str, *, ci_root: Path, out_dir: Optional[Path], head
         "tweet_url": url,
         "author_handle": "@" + extracted.handle,
         "datetime_utc": dtp.astimezone(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-        "datetime_beijing": _to_beijing_iso(dtp),
+        "datetime_local": _to_local_iso(dtp),
         "fetched_at": _dt.date.today().isoformat(),
         "text": extracted.text,
         "media": media_entries,

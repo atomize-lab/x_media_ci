@@ -37,7 +37,7 @@ RECOMMENDED_FIELDS = (
     "text",
     "media",
     "exports",
-    "datetime_beijing",
+    "datetime_local",
     "components",
     "replies",
 )

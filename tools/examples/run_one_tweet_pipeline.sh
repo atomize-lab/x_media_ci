@@ -3,7 +3,7 @@
 # 用法：
 #   bash examples/run_one_tweet_pipeline.sh <tweet_dir>
 # 示例：
-#   bash examples/run_one_tweet_pipeline.sh ../accounts/0x_Discover/tweets/2026/2026-04/20260417T081047Z_2045052337996157219
+#   bash examples/run_one_tweet_pipeline.sh ../accounts/example_user/tweets/2026/2026-04/20260417T081047Z_1234567890
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

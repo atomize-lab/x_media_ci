@@ -31,7 +31,7 @@ adb devices
 bash tools/android/adb_sync.sh push ../accounts /sdcard/Download/citeseal/accounts
 # 同步单条 tweet（用得最多）
 bash tools/android/adb_sync.sh push \
-  "../accounts/0x_Discover/tweets/2026/2026-04/20260417T081047Z_2045052337996157219" \
+  "../accounts/example_user/tweets/2026/2026-04/20260417T081047Z_1234567890" \
   /sdcard/Download/citeseal
 ```
 

@@ -94,7 +94,7 @@ you already downloaded by hand.
 Use any URL you've already downloaded into `accounts/`:
 
 1. `Save to` = `<your_local_path>/citeseal/accounts`
-2. Paste: `https://x.com/0x_Discover/status/2045052337996157219`
+2. Paste: `https://x.com/<handle>/status/<tweet_id>`
 3. Click **Fetch** — the log should say "found existing dir"
 4. Click **Save ALL** — it produces a fresh `*_full.md` / `*_full.pdf`
 5. Click **Open Folder** — Windows Explorer opens the tweet directory
