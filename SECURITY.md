@@ -1,6 +1,6 @@
 # Security and responsible use
 
-X Media CI is a local-first archiving toolkit. It is intended for personal research, documentation, and maintainer workflows involving content the user is already authorized to access.
+CiteSeal is a local-first archiving toolkit. It is intended for personal research, documentation, and maintainer workflows involving content the user is already authorized to access.
 
 ## Responsible-use policy
 
@@ -17,7 +17,7 @@ Use the tool only with your own browser session and for content you are allowed 
 
 ## Platform and copyright considerations
 
-X Media CI can preserve text and media locally. That does not grant rights to republish or redistribute third-party content. Users are responsible for:
+CiteSeal can preserve text and media locally. That does not grant rights to republish or redistribute third-party content. Users are responsible for:
 
 - respecting platform terms;
 - respecting copyright and licenses;

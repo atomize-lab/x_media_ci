@@ -69,7 +69,7 @@ Every claim is traceable. The archive is reproducible — a peer reviewer can ve
 | Screenshot | No source URL, no timestamp, no hash, no structured metadata |
 | Bookmark | Platform-dependent, media may expire, not citable |
 | Copy-paste text | Loses images, loses context, no provenance |
-| X Media CI | Local, stable, structured, citable, media-complete |
+| CiteSeal | Local, stable, structured, citable, media-complete |
 
 ---
 
@@ -231,7 +231,7 @@ context management.
 
 ### Why this matters
 
-| Property | Live web access | X Media CI archive |
+| Property | Live web access | CiteSeal archive |
 |---|---|---|
 | **Stability** | Content may change between runs | Fixed local files, immutable per capture |
 | **Media access** | Agent sees URLs, not content | OCR text + file paths available |
@@ -249,7 +249,7 @@ The agent's output is only as trustworthy as its input. By grounding the agent i
 1. **Capture is explicit and user-authorized.** No background scraping, no bulk automation. The user decides what to archive.
 2. **`tweet.json` is the source of truth.** Derived artifacts (Markdown, OCR, PDF) are traceable exports, not authoritative.
 3. **The archive is filesystem-native.** No database server, no opaque binary format. Standard tools work.
-4. **Agents are downstream consumers.** X Media CI captures and validates; agents read and reason. The separation is intentional.
+4. **Agents are downstream consumers.** CiteSeal captures and validates; agents read and reason. The separation is intentional.
 5. **Everything is citable.** Source URL, timestamp, author, and media hashes are preserved for every item.
 
 ---

@@ -1,4 +1,4 @@
-# X Media CI - Makefile
+# CiteSeal - Makefile
 #
 # Common development tasks. Run `make help` for a list of targets.
 #

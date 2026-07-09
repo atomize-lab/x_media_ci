@@ -27,7 +27,7 @@ What actually happened.
 
 - OS: (e.g. Ubuntu 22.04, Windows 11 WSL2, macOS 14)
 - Python version: (run `python3 --version`)
-- X Media CI version / commit: (run `git rev-parse --short HEAD`)
+- CiteSeal version / commit: (run `git rev-parse --short HEAD`)
 - Command used: (e.g. `python tools/fetch_x.py timeline --handle ...`)
 
 ## Logs / error output

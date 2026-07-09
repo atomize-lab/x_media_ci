@@ -1,6 +1,6 @@
 # Agent Integration
 
-How AI agents (Claude, Hermes, Codex, or any LLM-based workflow) consume the X Media CI archive as a stable context layer.
+How AI agents (Claude, Hermes, Codex, or any LLM-based workflow) consume the CiteSeal archive as a stable context layer.
 
 ---
 
@@ -17,7 +17,7 @@ AI agents that read social media directly from the browser face several problems
 | **Rate and access limits** | Repeated browsing triggers blocks, captchas, or login walls. Agents waste turns on access, not reasoning. |
 | **Non-reproducible runs** | If the input changes between runs, the agent's output cannot be reproduced or audited. |
 
-X Media CI solves these by capturing content into **stable local files** with structured metadata, media hashes, and derived text exports. Agents read the local archive instead of the live web.
+CiteSeal solves these by capturing content into **stable local files** with structured metadata, media hashes, and derived text exports. Agents read the local archive instead of the live web.
 
 ---
 
@@ -193,7 +193,7 @@ Codex learns the schema from a real example, produces a compliant fixture, and v
 
 ## What agents should NOT do
 
-- **Do not bulk-scrape.** X Media CI is designed for small, explicit, user-authorized captures. Agents should not automate mass collection.
+- **Do not bulk-scrape.** CiteSeal is designed for small, explicit, user-authorized captures. Agents should not automate mass collection.
 - **Do not bypass access controls.** Use only content you are authorized to access with your own browser session.
 - **Do not redistribute media.** The archive is for local use. Agents should reference file paths and hashes, not republish third-party media.
 - **Do not treat derived exports as authoritative.** `tweet.json` is the source of truth. OCR text, Markdown, and PDF are derived artifacts that may have transcription errors.
@@ -203,12 +203,12 @@ Codex learns the schema from a real example, produces a compliant fixture, and v
 
 ## Design principle: agents are downstream consumers
 
-X Media CI is the **evidence layer**, not the agent itself. The separation is intentional:
+CiteSeal is the **evidence layer**, not the agent itself. The separation is intentional:
 
 ```
 User authorizes capture
       ↓
-X Media CI captures + validates + exports
+CiteSeal captures + validates + exports
       ↓
 Local archive (stable, auditable, filesystem-native)
       ↓

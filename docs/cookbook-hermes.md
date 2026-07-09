@@ -2,21 +2,21 @@
 
 > **Audience:** Developers who use Hermes Agent (or similar agent frameworks)
 > to build research workflows on top of archived content.
-> **Prerequisites:** X Media CI installed, Hermes Agent running, at least one
+> **Prerequisites:** CiteSeal installed, Hermes Agent running, at least one
 > archived item on disk.
 
 ---
 
-## Why Hermes + X Media CI
+## Why Hermes + CiteSeal
 
 Hermes Agent is an AI agent orchestration system with file-reading tools,
-persistent memory, and multi-step workflow capabilities. X Media CI produces
+persistent memory, and multi-step workflow capabilities. CiteSeal produces
 self-describing agent bundles that Hermes can consume as stable context.
 
 The combination enables a workflow where:
 
-1. **Human captures** content with X Media CI (explicit, authorized)
-2. **X Media CI exports** an agent bundle (structured, hashed, provenance-traced)
+1. **Human captures** content with CiteSeal (explicit, authorized)
+2. **CiteSeal exports** an agent bundle (structured, hashed, provenance-traced)
 3. **Hermes reads** the bundle via `read_file` tool (local, no network)
 4. **Hermes reasons** across multiple bundles (cross-reference, summarize, audit)
 5. **Human reviews** Hermes output before publishing
@@ -263,13 +263,13 @@ bundle and the auditability of the manifest.
 
 Hermes Agent supports custom skills. A natural integration pattern:
 
-1. **Create a Hermes skill** that knows the X Media CI bundle schema
+1. **Create a Hermes skill** that knows the CiteSeal bundle schema
 2. **The skill** reads `bundle.json`, validates `bundle_version`, checks `trust_flags`
 3. **The skill** produces structured output (summary, citation, audit verdict)
 4. **The session** can chain multiple bundle reads into a workflow
 
 This turns bundle consumption from ad-hoc prompting into a repeatable, skill-driven
-workflow - which is exactly the agent-ready pattern X Media CI is designed to support.
+workflow - which is exactly the agent-ready pattern CiteSeal is designed to support.
 
 ---
 

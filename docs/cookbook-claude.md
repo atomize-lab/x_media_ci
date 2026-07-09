@@ -2,7 +2,7 @@
 
 > **Audience:** Developers and maintainers who want to feed archived content to
 > Claude (or Claude Code CLI) as a stable, citable context layer.
-> **Prerequisites:** X Media CI installed, at least one archived item on disk.
+> **Prerequisites:** CiteSeal installed, at least one archived item on disk.
 
 ---
 
@@ -260,7 +260,7 @@ When Claude cites an archived item, use this format:
 ```
 [@author_handle, captured_at]. "{text_excerpt first 80 chars}...".
 Source: {source_url}. Archive hash: {sha256 of primary media}.
-Retrieved via X Media CI agent bundle v{bundle_version}.
+Retrieved via CiteSeal agent bundle v{bundle_version}.
 ```
 
 This gives the reader: the original source, the capture time, a content hash for

@@ -1,12 +1,12 @@
-# X Media CI
+# CiteSeal
 
 **Local-first, auditable, agent-ready research archive infrastructure.**
 
-X Media CI captures fragile web content — posts, images, videos, metadata — and turns it into structured, verifiable, local artifacts that humans and AI agents can consume long after the original page changes or disappears.
+CiteSeal captures fragile web content — posts, images, videos, metadata — and turns it into structured, verifiable, local artifacts that humans and AI agents can consume long after the original page changes or disappears.
 
 It is designed for builders who use social media as a research, product, or market signal source and need a reproducible way to preserve useful content as a **durable local evidence layer** — not a one-off screenshot or a clipboard paste.
 
-![X Media CI architecture](docs/assets/architecture.svg)
+![CiteSeal architecture](docs/assets/architecture.svg)
 
 > **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, GitHub Actions CI, 192 passing tests, agent bundle + provenance manifest exports, and a Flutter client skeleton for mobile/desktop review.
 
@@ -16,7 +16,7 @@ It is designed for builders who use social media as a research, product, or mark
 
 Web content is fragile. Posts get deleted, media links expire, threads fragment, and AI agents that try to read live pages get unstable, inconsistent context.
 
-X Media CI solves this by capturing content into a **stable local format** with:
+CiteSeal solves this by capturing content into a **stable local format** with:
 
 - structured metadata (`tweet.json`) and JSONL indices
 - media saved at original quality where possible
@@ -57,7 +57,7 @@ The archive is filesystem-native, easy to back up, and friendly to shell tools, 
 
 This project is **local-first** and intended for personal research, documentation, and maintainer workflows.
 
-X Media CI does **not** provide an API bypass, credential bypass, paywall bypass, or public scraping service. Use it only for content you are authorized to access, with your own browser session, and respect platform terms, copyright, privacy, and deletion requests.
+CiteSeal does **not** provide an API bypass, credential bypass, paywall bypass, or public scraping service. Use it only for content you are authorized to access, with your own browser session, and respect platform terms, copyright, privacy, and deletion requests.
 
 See [`SECURITY.md`](SECURITY.md) for the full security and responsible-use policy.
 

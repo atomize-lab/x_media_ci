@@ -1,6 +1,6 @@
 # Vision
 
-X Media CI is a local-first archive layer for X/Twitter content that can be used by humans, scripts, and AI agents.
+CiteSeal is a local-first archive layer for X/Twitter content that can be used by humans, scripts, and AI agents.
 
 The long-term goal is not to build a public scraper. The goal is to help people preserve and reuse content they can already access in a structured, private, reproducible way.
 
@@ -62,7 +62,7 @@ A v1 user should be able to:
 
 ## Relationship to AI-agent workflows
 
-X Media CI is the information-asset layer. It does not decide what is important by itself. Instead, it produces clean local artifacts that other systems can consume:
+CiteSeal is the information-asset layer. It does not decide what is important by itself. Instead, it produces clean local artifacts that other systems can consume:
 
 - trend radar tools can pass selected URLs to the archive;
 - content pipelines can read Markdown/PDF exports;

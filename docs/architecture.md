@@ -1,6 +1,6 @@
 # Architecture
 
-X Media CI is organized around five layers:
+CiteSeal is organized around five layers:
 
 1. capture
 2. storage
