@@ -158,7 +158,7 @@ indices/
   "tweet_url": "https://x.com/<handle>/status/<id>",
   "author_handle": "<handle>",
   "datetime_utc": "2026-06-27T00:00:00Z",
-  "datetime_local": "2026-06-27T08:00:00+08:00",
+  "datetime_local": "2026-06-27T00:00:00Z",
   "text": "...",
   "media": [
     {
@@ -202,6 +202,10 @@ indices/
 │   ├── architecture.md
 │   ├── roadmap.md
 │   ├── agent-integration.md
+│   ├── agent-bundle-spec.md
+│   ├── provenance.md
+│   ├── cookbook-claude.md
+│   ├── cookbook-hermes.md
 │   └── use-cases.md
 ├── tests/               # 218 pytest tests, synthetic fixtures
 ├── .github/workflows/   # CI: lint + validate + pytest (Ubuntu + Windows)
@@ -228,6 +232,8 @@ The archive data itself is usually stored outside the repo or under a local `acc
 | [`docs/agent-integration.md`](docs/agent-integration.md) | How AI agents consume the archive as a context layer |
 | [`docs/agent-bundle-spec.md`](docs/agent-bundle-spec.md) | Agent bundle v1.0 specification |
 | [`docs/provenance.md`](docs/provenance.md) | Manifest layer: provenance, integrity, and transform tracing |
+| [`docs/cookbook-claude.md`](docs/cookbook-claude.md) | How Claude reads the archive for summarization/citation |
+| [`docs/cookbook-hermes.md`](docs/cookbook-hermes.md) | How Hermes builds trend reports from the archive |
 | [`docs/use-cases.md`](docs/use-cases.md) | Real-world scenarios and workflows |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones toward a stable v1 |
 | [`SECURITY.md`](SECURITY.md) | Security and responsible-use policy |
@@ -259,12 +265,12 @@ All three must pass before pushing. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 
 ## Roadmap snapshot
 
-**Near-term (grant-relevant):**
+**Completed in v0.7.0:**
 
 - Agent bundle spec (`agent_bundle.schema.json`) and `cs export-agent` command
 - Provenance manifest layer (capture environment, hashes, transform trace)
 - FastAPI agent-access endpoints
-- Claude/Hermes/Codex consumption cookbook
+- Claude/Hermes consumption cookbook
 - v0.7.0 first public release
 
 **Long-term backlog:**
@@ -282,24 +288,9 @@ See [`docs/roadmap.md`](docs/roadmap.md) for the full plan.
 
 This project is maintained by **atomize-lab** ([GitHub](https://github.com/atomize-lab)).
 
-It is an independent, personal research tool. All commits use the maintainer's
-real GitHub identity, not an AI bot account. AI assistants (Claude, Hermes)
-are used as development tools during the engineering process, but all design
-decisions, code review, and release authority rest with the human maintainer.
-
-### Maintainer workflow
-
-The maintainer uses AI coding assistants for:
-
-- Cross-language refactoring and code generation
-- Test fixture generation from archive structure
-- Documentation writing and review
-- Issue triage and classification
-- Schema evolution planning
-
-These are exactly the workflows that benefit from sustained access to
-Claude and similar models, and the project is structured to serve as a
-real testbed for agent-ready archive consumption.
+It is an independent, personal research tool. AI assistants (Claude, Hermes)
+are used as development tools during engineering, but all design decisions,
+code review, and release authority rest with the human maintainer.
 
 ---
 

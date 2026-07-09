@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.7.0] - 2026-07-09
 
-First public release. All core features are functional and tested (218 tests).
+First public release. Capture, storage, validation, export, agent bundle, provenance manifest, and local API are functional and tested (218 tests). The Flutter client is a skeleton for review only.
 
 ### Changed
 - Renamed project from `x_media_ci` to **CiteSeal** (package name, CLI, env vars, docs, file paths)
@@ -46,7 +46,7 @@ First public release. All core features are functional and tested (218 tests).
 ### Added - Agent consumption cookbook (v0.6)
 - `docs/cookbook-claude.md`: how Claude reads the archive for summarization/citation
 - `docs/cookbook-hermes.md`: how Hermes builds trend reports from the archive
-- `tools/examples/agent/claude_prompt_example.md`, `hermes_workflow.md`, `http_client_example.py`
+- `tools/examples/agent/`: Claude/Hermes prompt examples and HTTP client reference
 
 ### Added - Narrative and maintainability (v0.2)
 - Issue templates: bug report and feature request (`.github/ISSUE_TEMPLATE/`)
