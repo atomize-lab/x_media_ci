@@ -210,7 +210,7 @@ indices/
 │   │   ├── 0001-agent-bundle-as-agent-consumption-layer.md
 │   │   └── 0002-local-first-boundary.md
 │   └── use-cases.md
-├── tests/               # 218 pytest tests, synthetic fixtures
+├── tests/               # 219 pytest tests, synthetic fixtures
 ├── .github/workflows/   # CI: lint + validate + pytest (Ubuntu + Windows)
 └── tools/
     ├── fetch_x.py              # Playwright X capture: URL + timeline

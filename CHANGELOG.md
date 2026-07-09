@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR (Architecture Decision Records): `docs/adr/0001-agent-bundle-as-agent-consumption-layer.md`, `docs/adr/0002-local-first-boundary.md`
 - Good first issue template (`.github/ISSUE_TEMPLATE/good-first-issue.md`) and contribution areas table in CONTRIBUTING.md
 - Three open good first issues (#2 schema reference, #3 sample archive generator, #4 validation error messages)
+- Live demo script `tools/scripts/demo_agent_consumption.py`: end-to-end export-agent → manifest → agent consumption pipeline (synthetic fixtures, 219 tests)
 
 ## [v0.7.0] - 2026-07-09
 
