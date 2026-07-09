@@ -1,6 +1,6 @@
 [project]
 name = "citeseal"
-version = "0.1.0"
+version = "0.7.0"
 description = "Local-first, auditable, agent-ready social media research archive CLI."
 requires-python = ">=3.9"
 readme = "README.md"

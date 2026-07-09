@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- nothing yet
+
+## [v0.7.0] - 2026-07-09
+
+First public release. All core features are functional and tested (218 tests).
+
+### Changed
+- Renamed project from `x_media_ci` to **CiteSeal** (package name, CLI, env vars, docs, file paths)
+- `datetime_beijing` field renamed to `datetime_local` for privacy neutrality
+- README maintainer section now references the org account instead of a personal handle
+- Example URLs in docs replaced with generic placeholders
+- Internal review materials removed from project and git history
+- GitHub repo description/topics updated to brand positioning
+
 ### Added - Agent bundle spec and export (v0.3)
 - `schemas/agent_bundle.schema.json`: agent bundle v1.0 JSON Schema (item_id, source_platform, source_url, captured_at, author_handle, text_excerpt, assets, provenance, trust_flags, related_items)
 - `docs/agent-bundle-spec.md`: full specification for agent bundle v1.0
@@ -22,6 +37,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `cs manifest` CLI command for single-item manifest generation
 - 59 unit tests for manifest generation, hash verification, and transform inference
 
+### Added - Agent-access API endpoints (v0.5)
+- `GET /api/index/items`: structured item list for agent consumption
+- `GET /api/item/{id}/context`: agent-readable context for an item
+- `POST /api/export/agent_bundle`: batch bundle export
+- `POST /api/validate/item/{id}`: on-demand validation
+
+### Added - Agent consumption cookbook (v0.6)
+- `docs/cookbook-claude.md`: how Claude reads the archive for summarization/citation
+- `docs/cookbook-hermes.md`: how Hermes builds trend reports from the archive
+- `tools/examples/agent/claude_prompt_example.md`, `hermes_workflow.md`, `http_client_example.py`
+
 ### Added - Narrative and maintainability (v0.2)
 - Issue templates: bug report and feature request (`.github/ISSUE_TEMPLATE/`)
 - Pull request template (`.github/pull_request_template.md`)
@@ -31,12 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/use-cases.md`: three high-value scenarios with ROI comparison
 - Maintainer section in README
 
-### Changed
+### Other changes
 - Rewrote `README.md` with new positioning: "local-first, auditable, agent-ready research archive infrastructure"
 - Restructured `docs/roadmap.md` into grant-relevant track and long-term backlog
 - Updated `docs/architecture.md` from four-layer to five-layer architecture (added provenance & integrity layer)
 - Replaced Unicode CLI output symbols with ASCII for Windows compatibility
-- Test count increased from 88 to 192 (all passing on Ubuntu + Windows CI)
+- Test count increased from 88 to 218 (all passing on Ubuntu + Windows CI)
 
 ## [v0.1.0] - 2026-07-08
 

@@ -8,7 +8,7 @@ It is designed for builders who use social media as a research, product, or mark
 
 ![CiteSeal architecture](docs/assets/architecture.svg)
 
-> **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, GitHub Actions CI, 192 passing tests, agent bundle + provenance manifest exports, and a Flutter client skeleton for mobile/desktop review.
+> **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, GitHub Actions CI, 218 passing tests, agent bundle + provenance manifest exports, and a Flutter client skeleton for mobile/desktop review.
 
 ---
 
@@ -203,7 +203,7 @@ indices/
 │   ├── roadmap.md
 │   ├── agent-integration.md
 │   └── use-cases.md
-├── tests/               # 192 pytest tests, synthetic fixtures
+├── tests/               # 218 pytest tests, synthetic fixtures
 ├── .github/workflows/   # CI: lint + validate + pytest (Ubuntu + Windows)
 └── tools/
     ├── fetch_x.py              # Playwright X capture: URL + timeline
@@ -265,7 +265,7 @@ All three must pass before pushing. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 - Provenance manifest layer (capture environment, hashes, transform trace)
 - FastAPI agent-access endpoints
 - Claude/Hermes/Codex consumption cookbook
-- v0.1.0 tagged release
+- v0.7.0 first public release
 
 **Long-term backlog:**
 

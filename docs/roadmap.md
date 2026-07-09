@@ -5,7 +5,7 @@ This roadmap is split into two tracks:
 - **Grant-relevant track** — work that directly strengthens the project's position as a local-first, auditable, agent-ready research archive infrastructure. These are the highest-priority items.
 - **Long-term backlog** — valuable but not time-critical. These can be deferred until after the core agent-ready layer is stable.
 
-## Current state (v0.1 foundation)
+## Current state (v0.7 first public release)
 
 Already present and tested:
 
@@ -83,10 +83,10 @@ Prove that Claude, Hermes, and Codex can consume the archive in real workflows.
 - [x] Add `tools/examples/agent/http_client_example.py`
 - [x] Document what agents should NOT do (no bulk scraping, no redistribution)
 
-### v0.7 — First public release (Week 7)
+### v0.7 - First public release (Week 7)
 
-- [ ] Tag v0.1.0 with release notes and known limitations
-- [ ] Add README Quickstart with minimal demo data flow
+- [x] Tag v0.7.0 with release notes and known limitations
+- [x] Add README Quickstart with minimal demo data flow
 - [ ] Add "good first issue" labels and contribution areas
 - [ ] Add Architecture Decision Records (`docs/adr/0001-agent-bundle.md`, `docs/adr/0002-local-first-boundary.md`)
 
