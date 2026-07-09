@@ -1,4 +1,4 @@
-# Runtime dependencies for x_media CI tools.
+# Runtime dependencies for CiteSeal tools.
 # Pinned loosely; the scripts work fine on reasonably recent releases.
 Pillow>=10.0
 reportlab>=4.0

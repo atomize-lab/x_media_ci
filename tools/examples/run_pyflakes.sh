@@ -6,4 +6,4 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 cd "$ROOT"
-exec python x_media_ci.py lint
+exec python citeseal.py lint

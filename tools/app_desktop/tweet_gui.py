@@ -1,4 +1,4 @@
-"""x_media CI — Desktop GUI (Tkinter, single file).
+"""CiteSeal — Desktop GUI (Tkinter, single file).
 
 What this is
 ------------
@@ -7,7 +7,7 @@ tweet URL, click a button, the app downloads / converts / opens the
 folder for you. No browser, no terminal, no HTTP server.
 
 It does not talk to X directly. It drives the existing
-``tools/x_media_ci.py`` pipeline that you already have working.
+``tools/citeseal.py`` pipeline that you already have working.
 
 Layout
 ------
@@ -47,7 +47,7 @@ sys.path.insert(0, str(HERE))
 import tweet_fetcher as tf  # noqa: E402
 
 
-APP_TITLE = "x_media CI"
+APP_TITLE = "CiteSeal"
 APP_W, APP_H = 820, 600
 
 
@@ -198,10 +198,10 @@ class App(tk.Tk):
 
     def _default_save_root(self) -> Path:
         # Prefer <repo>/CI/accounts when present (matches the existing data).
-        # Otherwise fall back to <user>/Documents/x_media_ci.
+        # Otherwise fall back to <user>/Documents/citeseal.
         candidates = [
             Path(__file__).resolve().parents[2] / "accounts",   # tools/app_desktop -> CI/accounts
-            Path.home() / "Documents" / "x_media_ci" / "accounts",
+            Path.home() / "Documents" / "citeseal" / "accounts",
         ]
         for c in candidates:
             if c.exists():
@@ -216,7 +216,7 @@ class App(tk.Tk):
         """
         candidates = [
             Path(__file__).resolve().parents[2] / ".x_userdata",   # <repo>/.x_userdata
-            Path.home() / ".x_media_ci" / "userdata",
+            Path.home() / ".citeseal" / "userdata",
         ]
         # Pick the first that exists, else the repo-local one (so devs
         # can git-ignore it but it lives next to the CI data).
@@ -364,7 +364,7 @@ class App(tk.Tk):
         auth_token = self.var_auth_token.get().strip()
         ct0 = self.var_ct0.get().strip()
 
-        # CI root is the parent of `accounts/` (so x_media_ci fix walks
+        # CI root is the parent of `accounts/` (so citeseal fix walks
         # the whole tree). Fall back to save_root.
         ci_root = self._save_root.parent if self._save_root.name == "accounts" else self._save_root
 

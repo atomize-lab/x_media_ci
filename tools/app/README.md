@@ -1,6 +1,6 @@
-# x_media CI — Flutter App
+# CiteSeal — Flutter App
 
-Cross-platform client for the `x_media/CI` long-term tweet storage.
+Cross-platform client for the `citeseal` long-term tweet storage.
 Targets **Win11 / Ubuntu22 / Android 14+** from a single Flutter codebase.
 
 ## Sections
@@ -23,7 +23,7 @@ Targets **Win11 / Ubuntu22 / Android 14+** from a single Flutter codebase.
 
 ```bash
 cd tools/app
-flutter create . --project-name x_media_ci_app --platforms=android,linux,windows
+flutter create . --project-name citeseal_app --platforms=android,linux,windows
 flutter pub get
 ```
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/atomize-lab/x_media_ci/raw/main/schemas/manifest.schema.json",
+  "$id": "https://github.com/atomize-lab/citeseal/raw/main/schemas/manifest.schema.json",
   "title": "Item Manifest",
   "description": "Provenance manifest for a single archived item. Records where the item came from, when it was captured, what transforms have been applied, and the complete file inventory with hashes.",
   "type": "object",

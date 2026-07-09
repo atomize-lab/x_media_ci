@@ -84,7 +84,7 @@ ffmpeg -version
 ```bash
 python tools/fetch_x.py url \
   --url "https://x.com/<handle>/status/<tweet_id>" \
-  --ci-root ./x_media/CI \
+  --ci-root ./citeseal \
   --user-data-dir tools/.pw-userdata \
   --headed
 ```
@@ -97,21 +97,21 @@ The first headed run can be used to log in with your own browser session. Later 
 python tools/fetch_x.py timeline \
   --handle "<handle>" \
   --limit 20 \
-  --ci-root ./x_media/CI \
+  --ci-root ./citeseal \
   --user-data-dir tools/.pw-userdata
 ```
 
 ### 4. Validate or export landed content
 
 ```bash
-python tools/x_media_ci.py validate --root ./x_media/CI/accounts
-python tools/x_media_ci.py batch --root ./x_media/CI/accounts --op all --force
+python tools/citeseal.py validate --root ./citeseal/accounts
+python tools/citeseal.py batch --root ./citeseal/accounts --op all --force
 ```
 
 ### 5. Start the local API server
 
 ```bash
-X_MEDIA_CI_ROOT="$PWD/x_media/CI/accounts" bash tools/server/run_server.sh
+CITESEAL_ROOT="$PWD/citeseal/accounts" bash tools/server/run_server.sh
 # Open http://localhost:8765/docs
 ```
 
@@ -181,12 +181,12 @@ indices/
 |---|---|
 | `tools/fetch_x.py url --url ...` | Capture one post |
 | `tools/fetch_x.py timeline --handle ...` | Discover and capture recent timeline posts |
-| `tools/x_media_ci.py md --tweet-dir ...` | Generate Markdown from landed metadata/extracts |
-| `tools/x_media_ci.py pdf --tweet-dir ...` | Generate PDF |
-| `tools/x_media_ci.py ocr --tweet-dir ...` | OCR screenshots/images into text and exports |
-| `tools/x_media_ci.py transcode --tweet-dir ...` | Normalize media for playback |
-| `tools/x_media_ci.py validate --root ...` | Validate archive schema |
-| `tools/x_media_ci.py batch --root ... --op ...` | Run an operation across many tweet dirs |
+| `tools/citeseal.py md --tweet-dir ...` | Generate Markdown from landed metadata/extracts |
+| `tools/citeseal.py pdf --tweet-dir ...` | Generate PDF |
+| `tools/citeseal.py ocr --tweet-dir ...` | OCR screenshots/images into text and exports |
+| `tools/citeseal.py transcode --tweet-dir ...` | Normalize media for playback |
+| `tools/citeseal.py validate --root ...` | Validate archive schema |
+| `tools/citeseal.py batch --root ... --op ...` | Run an operation across many tweet dirs |
 
 ---
 
@@ -207,7 +207,7 @@ indices/
 ├── .github/workflows/   # CI: lint + validate + pytest (Ubuntu + Windows)
 └── tools/
     ├── fetch_x.py              # Playwright X capture: URL + timeline
-    ├── x_media_ci.py           # Unified CLI for export/validate/batch operations
+    ├── citeseal.py           # Unified CLI for export/validate/batch operations
     ├── scripts/                # Markdown/PDF/OCR/transcode/schema helpers
     ├── server/                 # FastAPI local API for phone/desktop clients
     ├── app/                    # Flutter client skeleton
@@ -246,7 +246,7 @@ python -m pip install -r requirements-dev.txt
 python -m pytest tests/ -v
 
 # Lint
-cd tools && python x_media_ci.py lint && cd ..
+cd tools && python citeseal.py lint && cd ..
 
 # Validate test fixtures
 python tools/scripts/tweet_validate.py \
@@ -261,7 +261,7 @@ All three must pass before pushing. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 
 **Near-term (grant-relevant):**
 
-- Agent bundle spec (`agent_bundle.schema.json`) and `xmc export-agent` command
+- Agent bundle spec (`agent_bundle.schema.json`) and `cs export-agent` command
 - Provenance manifest layer (capture environment, hashes, transform trace)
 - FastAPI agent-access endpoints
 - Claude/Hermes/Codex consumption cookbook
@@ -269,7 +269,7 @@ All three must pass before pushing. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 
 **Long-term backlog:**
 
-- Unified CLI aliases (`xmc fetch`, `xmc timeline`, `xmc serve`, `xmc doctor`)
+- Unified CLI aliases (`cs fetch`, `cs timeline`, `cs serve`, `cs doctor`)
 - Thread/reply capture, bookmark import
 - Local full-text search (SQLite FTS)
 - Plugin hooks for AI-agent summarization and tagging

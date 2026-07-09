@@ -3,7 +3,7 @@
 ## Our Pledge
 
 We are committed to providing a welcoming and inclusive environment for
-everyone participating in the x_media_ci project and its community.
+everyone participating in the citeseal project and its community.
 
 We pledge to make participation in our community a harassment-free experience
 for everyone, regardless of age, body size, visible or invisible disability,

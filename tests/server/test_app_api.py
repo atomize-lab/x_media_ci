@@ -10,7 +10,7 @@ Covers both the legacy endpoints and the v0.5 agent-access layer:
   - GET  /api/tweet/{id}             (legacy)
   - 404 handling for unknown items
 
-The server reads from ``X_MEDIA_CI_ROOT``; tests point it at the
+The server reads from ``CITESEAL_ROOT``; tests point it at the
 synthetic fixture tree under ``tests/fixtures/accounts``.
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ for _p in (str(SCRIPTS_DIR), str(SERVER_DIR)):
 
 # Point the server at the fixture accounts directory.
 FIXTURES_ACCOUNTS = ROOT / "tests" / "fixtures" / "accounts"
-os.environ["X_MEDIA_CI_ROOT"] = str(FIXTURES_ACCOUNTS)
+os.environ["CITESEAL_ROOT"] = str(FIXTURES_ACCOUNTS)
 
 from fastapi.testclient import TestClient  # noqa: E402
 

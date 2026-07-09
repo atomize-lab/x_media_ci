@@ -1,5 +1,5 @@
 @echo off
-REM Windows native wrapper for the x_media_ci Makefile.
+REM Windows native wrapper for the citeseal Makefile.
 REM
 REM Why this exists:
 REM   `make` is not always available on a vanilla Windows install.
@@ -91,15 +91,15 @@ echo   make.cmd lint               - run pyflakes
 echo   make.cmd fix   ROOT=^<dir^>  - normalize tweet.json (FIX_APPLY=1 to write)
 echo   make.cmd transcode ROOT=^<dir^> - transcode media/* (TC_APPLY=1 to run; needs ffmpeg)
 echo   make.cmd ci                 - lint + validate (GitHub Actions)
-echo   make.cmd server             - FastAPI wrapper around x_media_ci (port 8765)
+echo   make.cmd server             - FastAPI wrapper around citeseal (port 8765)
 echo   make.cmd app-bootstrap      - flutter create . into the existing tools/app
 echo   make.cmd app-run            - flutter run on the current device
 echo   make.cmd app-apk            - flutter build apk --release
-echo   make.cmd dist-win           - PyInstaller -^> dist\x_media_ci_server.exe
+echo   make.cmd dist-win           - PyInstaller -^> dist\citeseal_server.exe
 echo   make.cmd dist-linux         - portable venv tarball (needs WSL or git bash)
 echo   make.cmd dist-android       - print Android build steps (needs Flutter SDK)
 echo   make.cmd dist               - whatever this OS can produce
-echo   make.cmd dist-gui           - PyInstaller -^> dist\x_media_ci_app.exe (desktop GUI)
+echo   make.cmd dist-gui           - PyInstaller -^> dist\citeseal_app.exe (desktop GUI)
 echo   make.cmd clean              - remove build/dist/__pycache__
 exit /b 0
 
@@ -113,62 +113,62 @@ exit /b %ERRORLEVEL%
 
 :md
 if "%DIR%"=="" ( echo DIR is required 1>&2 & exit /b 2 )
-%PY% x_media_ci.py md --tweet-dir "%DIR%" %PYFLAGS%
+%PY% citeseal.py md --tweet-dir "%DIR%" %PYFLAGS%
 exit /b %ERRORLEVEL%
 
 :pdf
 if "%DIR%"=="" ( echo DIR is required 1>&2 & exit /b 2 )
-%PY% x_media_ci.py pdf --tweet-dir "%DIR%" %PYFLAGS%
+%PY% citeseal.py pdf --tweet-dir "%DIR%" %PYFLAGS%
 exit /b %ERRORLEVEL%
 
 :ocr
 if "%DIR%"=="" ( echo DIR is required 1>&2 & exit /b 2 )
-%PY% x_media_ci.py ocr --tweet-dir "%DIR%"
+%PY% citeseal.py ocr --tweet-dir "%DIR%"
 exit /b %ERRORLEVEL%
 
 :all
 if "%DIR%"=="" ( echo DIR is required 1>&2 & exit /b 2 )
 if /i "%OCR%"=="1" (
-  %PY% x_media_ci.py all --tweet-dir "%DIR%" --keep-going %PYFLAGS% --with-ocr
+  %PY% citeseal.py all --tweet-dir "%DIR%" --keep-going %PYFLAGS% --with-ocr
 ) else (
-  %PY% x_media_ci.py all --tweet-dir "%DIR%" --keep-going %PYFLAGS%
+  %PY% citeseal.py all --tweet-dir "%DIR%" --keep-going %PYFLAGS%
 )
 exit /b %ERRORLEVEL%
 
 :batch
 set "BATCH_OCR_FLAG="
 if /i "%OCR%"=="1" set "BATCH_OCR_FLAG=--with-ocr"
-%PY% x_media_ci.py batch --root "%ROOT%" --op "%OP%" %BATCH_OCR_FLAG% %PYFLAGS%
+%PY% citeseal.py batch --root "%ROOT%" --op "%OP%" %BATCH_OCR_FLAG% %PYFLAGS%
 exit /b %ERRORLEVEL%
 
 :validate
-%PY% x_media_ci.py validate --root "%ROOT%"
+%PY% citeseal.py validate --root "%ROOT%"
 exit /b %ERRORLEVEL%
 
 :lint
-%PY% x_media_ci.py lint
+%PY% citeseal.py lint
 exit /b %ERRORLEVEL%
 
 :fix
 set "FIX_FLAG="
 if /i "%FIX_APPLY%"=="1" set "FIX_FLAG=--apply"
-%PY% x_media_ci.py fix --root "%ROOT%" %FIX_FLAG%
+%PY% citeseal.py fix --root "%ROOT%" %FIX_FLAG%
 exit /b %ERRORLEVEL%
 
 :transcode
 set "TC_FLAG="
 if /i "%TC_APPLY%"=="1" set "TC_FLAG=--apply"
-%PY% x_media_ci.py transcode --root "%ROOT%" %TC_FLAG% --force
+%PY% citeseal.py transcode --root "%ROOT%" %TC_FLAG% --force
 exit /b %ERRORLEVEL%
 
 :ci
 call :lint || exit /b %ERRORLEVEL%
-%PY% x_media_ci.py validate --root "%ROOT%"
+%PY% citeseal.py validate --root "%ROOT%"
 exit /b %ERRORLEVEL%
 
 :server
 %PY% -m pip install -q -r server\requirements.txt
-set "X_MEDIA_CI_PORT=%PORT%"
+set "CITESEAL_PORT=%PORT%"
 %PY% -m uvicorn server.app:app --host 0.0.0.0 --port %PORT% --app-dir server
 exit /b %ERRORLEVEL%
 
@@ -176,7 +176,7 @@ exit /b %ERRORLEVEL%
 where flutter >nul 2>&1
 if errorlevel 1 ( echo ERROR: flutter not on PATH 1>&2 & exit /b 2 )
 pushd app
-flutter create . --project-name x_media_ci_app --platforms=android,linux,windows
+flutter create . --project-name citeseal_app --platforms=android,linux,windows
 if errorlevel 1 ( popd & exit /b %ERRORLEVEL% )
 flutter pub get
 popd
@@ -200,9 +200,9 @@ exit /b %ERRORLEVEL%
 
 :dist_win
 %PY% -m pip install -q pyinstaller
-%PY% -m PyInstaller --noconfirm --clean server\x_media_ci_server.spec
+%PY% -m PyInstaller --noconfirm --clean server\citeseal_server.spec
 if errorlevel 1 exit /b %ERRORLEVEL%
-echo Built: %CD%\dist\x_media_ci_server.exe
+echo Built: %CD%\dist\citeseal_server.exe
 exit /b 0
 
 :dist_linux
@@ -230,7 +230,7 @@ exit /b %ERRORLEVEL%
 %PY% -m pip install -q pyinstaller
 %PY% -m PyInstaller --noconfirm --clean app_desktop\tweet_gui.spec
 if errorlevel 1 exit /b %ERRORLEVEL%
-echo Built: %CD%\dist\x_media_ci_app.exe
+echo Built: %CD%\dist\citeseal_app.exe
 exit /b 0
 
 :clean

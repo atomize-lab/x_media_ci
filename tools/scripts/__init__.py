@@ -1,4 +1,4 @@
-"""x_media_ci tools package.
+"""citeseal tools package.
 
 This package wraps the standalone scripts under ``tools/scripts/`` with a
 thin, importable layer so they can be reused from a unified CLI without
@@ -10,8 +10,8 @@ The original CLI scripts remain runnable as before:
 
 The new entry point adds convenience:
 
-    python tools/x_media_ci.py md  --tweet-dir <...>
-    python tools/x_media_ci.py pdf --tweet-dir <...>
-    python tools/x_media_ci.py ocr --tweet-dir <...>
+    python tools/citeseal.py md  --tweet-dir <...>
+    python tools/citeseal.py pdf --tweet-dir <...>
+    python tools/citeseal.py ocr --tweet-dir <...>
     ...
 """

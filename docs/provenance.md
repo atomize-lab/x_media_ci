@@ -2,11 +2,11 @@
 
 > **Status:** Stable (v1.0) — July 2026
 > **Schema:** [`schemas/manifest.schema.json`](../schemas/manifest.schema.json)
-> **Generator:** `x_media_ci manifest --tweet-dir <path>`
+> **Generator:** `citeseal manifest --tweet-dir <path>`
 
 ## 1. Why provenance matters
 
-Every archived item in `x_media_ci` originates from an external platform
+Every archived item in `citeseal` originates from an external platform
 (X/Twitter), then passes through a chain of local transforms: article
 extraction, PDF rendering, OCR, transcoding, and agent bundle export.
 Without a provenance record, a downstream consumer (AI agent, researcher,
@@ -93,10 +93,10 @@ Quick booleans for automated data-quality assessment:
 
 ```bash
 # Generate manifest for a single item
-x_media_ci manifest --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890
+citeseal manifest --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890
 
 # Dry-run (print to stdout, don't write)
-x_media_ci manifest --tweet-dir <path> --dry-run
+citeseal manifest --tweet-dir <path> --dry-run
 ```
 
 ### Library

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `schemas/agent_bundle.schema.json`: agent bundle v1.0 JSON Schema (item_id, source_platform, source_url, captured_at, author_handle, text_excerpt, assets, provenance, trust_flags, related_items)
 - `docs/agent-bundle-spec.md`: full specification for agent bundle v1.0
 - `tools/scripts/build_agent_bundle.py`: bundle generation with copy-on-export, optional SHA-256 media hashing
-- `xmc export-agent` CLI command for single-item bundle export
+- `cs export-agent` CLI command for single-item bundle export
 - `tools/examples/agent/` directory with Claude, Hermes, and HTTP client examples
 - 39 unit tests for bundle generation, schema validation, and edge cases
 
@@ -19,14 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `schemas/manifest.schema.json`: manifest v1.0 JSON Schema (metadata, files, transforms, trust_flags, summary)
 - `tools/scripts/build_manifest.py`: manifest generator with full-file SHA-256 hashing, automatic transform-chain inference
 - `docs/provenance.md`: provenance rules, verification methods, and bundle-manifest relationship
-- `xmc manifest` CLI command for single-item manifest generation
+- `cs manifest` CLI command for single-item manifest generation
 - 59 unit tests for manifest generation, hash verification, and transform inference
 
 ### Added - Narrative and maintainability (v0.2)
 - Issue templates: bug report and feature request (`.github/ISSUE_TEMPLATE/`)
 - Pull request template (`.github/pull_request_template.md`)
 - `Makefile` with `test`, `lint`, `validate-fixtures`, `serve`, `smoke-cli` targets
-- `xmc doctor` command for environment diagnostics
+- `cs doctor` command for environment diagnostics
 - `docs/agent-integration.md`: agent consumption guide with Claude/Hermes/Codex examples
 - `docs/use-cases.md`: three high-value scenarios with ROI comparison
 - Maintainer section in README
@@ -52,7 +52,7 @@ First tagged release. The project is a working local-first archive toolkit with 
 - PDF export (`tools/scripts/gen_pdf.py`)
 - OCR text extraction from images (`tools/scripts/gen_ocr.py`)
 - Video transcoding (`tools/scripts/transcode.py`)
-- Batch operations: `x_media_ci.py batch --op all|md|pdf|ocr|transcode|validate`
+- Batch operations: `citeseal.py batch --op all|md|pdf|ocr|transcode|validate`
 
 ### Added — Local API server
 - FastAPI server with 9 endpoints: health, accounts, index, tweet CRUD, job runner, media serving
@@ -80,10 +80,10 @@ First tagged release. The project is a working local-first archive toolkit with 
 - MIT `LICENSE`
 
 ### Added — CLI utilities
-- `x_media_ci.py lint`: pyflakes over bundled scripts
-- `x_media_ci.py validate`: validate archive directories
-- `x_media_ci.py batch`: run export/OCR/transcode operations in batch
-- `x_media_ci.py fix`: auto-fix common `tweet.json` issues (handle prefix, datetime format)
+- `citeseal.py lint`: pyflakes over bundled scripts
+- `citeseal.py validate`: validate archive directories
+- `citeseal.py batch`: run export/OCR/transcode operations in batch
+- `citeseal.py fix`: auto-fix common `tweet.json` issues (handle prefix, datetime format)
 
 ## Pre-release history
 

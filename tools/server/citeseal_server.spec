@@ -1,19 +1,19 @@
-# PyInstaller spec for the x_media CI server.
+# PyInstaller spec for the CiteSeal server.
 #
 # We build TWO executables so users can pick their preferred style:
 #
-#   x_media_ci_server.exe          (console)   <- DEFAULT for the typical
+#   citeseal_server.exe          (console)   <- DEFAULT for the typical
 #                                                "double-click and see what
 #                                                 happens" experience
-#   x_media_ci_server_windowed.exe (no console) <- for users who want a
+#   citeseal_server_windowed.exe (no console) <- for users who want a
 #                                                 silent tray-style launcher
 #
 # Build:
-#   pyinstaller --noconfirm --clean server/x_media_ci_server.spec
+#   pyinstaller --noconfirm --clean server/citeseal_server.spec
 #
 # Output (Windows):
-#   server/dist/x_media_ci_server.exe
-#   server/dist/x_media_ci_server_windowed.exe
+#   server/dist/citeseal_server.exe
+#   server/dist/citeseal_server_windowed.exe
 
 # -*- mode: python ; coding: utf-8 -*-
 
@@ -32,18 +32,18 @@ hiddenimports += collect_submodules("pydantic")
 hiddenimports += collect_submodules("anyio")
 hiddenimports += collect_submodules("starlette")
 
-# Bundle the x_media_ci scripts package so the frozen server can still
+# Bundle the citeseal scripts package so the frozen server can still
 # run md / pdf / ocr / fix / transcode jobs. Also bundle the
-# x_media_ci.py entry point so the server can spawn it as a subprocess.
+# citeseal.py entry point so the server can spawn it as a subprocess.
 server_dir = Path(SPECPATH).resolve()  # SPECPATH = directory holding this .spec
 tools_root = server_dir.parent
 scripts_pkg = tools_root / "scripts"
-x_media_ci_py = tools_root / "x_media_ci.py"
+citeseal_py = tools_root / "citeseal.py"
 datas = [
     (str(scripts_pkg), "scripts"),
 ]
-if x_media_ci_py.is_file():
-    datas.append((str(x_media_ci_py), "."))
+if citeseal_py.is_file():
+    datas.append((str(citeseal_py), "."))
 
 # The bundled start.cmd sits next to the exe so the user has a "one
 # click + black window" experience.
@@ -82,7 +82,7 @@ exe_console = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name="x_media_ci_server",
+    name="citeseal_server",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -98,7 +98,7 @@ exe_console = EXE(
 )
 
 # Windowed build: same binary, but no console popup. Logs go to
-# x_media_ci_server.log next to the exe. Useful for a silent launcher.
+# citeseal_server.log next to the exe. Useful for a silent launcher.
 exe_windowed = EXE(
     pyz,
     a.scripts,
@@ -106,7 +106,7 @@ exe_windowed = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name="x_media_ci_server_windowed",
+    name="citeseal_server_windowed",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

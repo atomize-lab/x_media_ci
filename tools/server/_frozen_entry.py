@@ -1,4 +1,4 @@
-"""PyInstaller entry point for the x_media CI server.
+"""PyInstaller entry point for the CiteSeal server.
 
 This file is **only** used by PyInstaller. The runtime entry point is
 ``app:app`` (the FastAPI instance). We import the FastAPI app eagerly
@@ -11,7 +11,7 @@ Run locally (without PyInstaller):
 
 Build a single-file Windows executable:
 
-    pyinstaller --noconfirm --clean server/x_media_ci_server.spec
+    pyinstaller --noconfirm --clean server/citeseal_server.spec
 """
 from __future__ import annotations
 
@@ -24,12 +24,12 @@ def _wire_log_file() -> None:
     if not getattr(sys, "frozen", False):
         return
     log_path = os.path.join(os.path.dirname(sys.executable),
-                            "x_media_ci_server.log")
+                            "citeseal_server.log")
     log_fp = open(log_path, "a", encoding="utf-8", buffering=1)
     # Replace stdout/stderr so uvicorn's prints are captured too.
     sys.stdout = _Tee(sys.stdout, log_fp)
     sys.stderr = _Tee(sys.stderr, log_fp)
-    print(f"[x_media_ci_server] logging to {log_path}", flush=True)
+    print(f"[citeseal_server] logging to {log_path}", flush=True)
 
 
 class _Tee:
@@ -62,10 +62,10 @@ from app import app  # noqa: E402
 def main() -> None:
     _wire_log_file()
     import uvicorn
-    host = os.environ.get("X_MEDIA_CI_HOST", "0.0.0.0")
+    host = os.environ.get("CITESEAL_HOST", "0.0.0.0")
     # Use 18765 (not 8765) to reduce the chance of colliding with other
-    # services on a fresh Windows install. Override with X_MEDIA_CI_PORT.
-    port = int(os.environ.get("X_MEDIA_CI_PORT", "18765"))
+    # services on a fresh Windows install. Override with CITESEAL_PORT.
+    port = int(os.environ.get("CITESEAL_PORT", "18765"))
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 

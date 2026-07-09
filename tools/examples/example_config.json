@@ -1,5 +1,5 @@
 {
-  "_comment": "Example configuration consumed by x_media_ci CLI for batch runs.",
+  "_comment": "Example configuration consumed by citeseal CLI for batch runs.",
   "ci_root": "../",
   "ocr_lang": "chi_sim+eng",
   "pdf": {

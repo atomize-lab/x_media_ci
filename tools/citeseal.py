@@ -1,4 +1,4 @@
-"""Unified CLI entry point for the x_media CI tools.
+"""Unified CLI entry point for the CiteSeal tools.
 
 This script does **not** re-implement the existing helpers; it delegates
 to them by spawning them as subprocesses (using ``sys.executable``) so the
@@ -7,12 +7,12 @@ work unchanged.
 
 Typical usage (from anywhere)::
 
-    python tools/x_media_ci.py md   --tweet-dir <...>/<tweet_id_dir>
-    python tools/x_media_ci.py pdf  --tweet-dir <...>
-    python tools/x_media_ci.py ocr  --tweet-dir <...> --screenshots-glob 'media/images/*.png'
-    python tools/x_media_ci.py all  --tweet-dir <...>
+    python tools/citeseal.py md   --tweet-dir <...>/<tweet_id_dir>
+    python tools/citeseal.py pdf  --tweet-dir <...>
+    python tools/citeseal.py ocr  --tweet-dir <...> --screenshots-glob 'media/images/*.png'
+    python tools/citeseal.py all  --tweet-dir <...>
 
-Run ``python tools/x_media_ci.py --help`` for the full sub-command list.
+Run ``python tools/citeseal.py --help`` for the full sub-command list.
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 # Make the bundled ``scripts/`` package importable when this file is run
-# directly (``python tools/x_media_ci.py``).
+# directly (``python tools/citeseal.py``).
 _HERE = Path(__file__).resolve().parent
 _SCRIPTS_DIR = _HERE / "scripts"
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -53,7 +53,7 @@ def _run_script(script: str, args: Sequence[str], *, cwd: Optional[Path] = None)
     """Run ``tools/scripts/<script>.py`` with the given args and stream output."""
     cmd = [_python_executable(), str(_SCRIPTS_DIR / script), *args]
     pretty = " ".join(shlex.quote(c) for c in cmd)
-    print(f"[x_media_ci] $ {pretty}", file=sys.stderr)
+    print(f"[citeseal] $ {pretty}", file=sys.stderr)
     proc = subprocess.run(cmd, cwd=str(cwd) if cwd else None)
     return proc.returncode
 
@@ -137,11 +137,11 @@ def cmd_md(args: argparse.Namespace) -> int:
     tp = tweet_paths(args.tweet_dir)
     extract = args.extract or _ensure_extract_json(tp, args) or tp.extract_json()
     if not extract or not extract.is_file():
-        print(f"[x_media_ci] skip (no extract.json): {args.tweet_dir}", file=sys.stderr)
+        print(f"[citeseal] skip (no extract.json): {args.tweet_dir}", file=sys.stderr)
         return 0
     out = args.out or (tp.exports_dir / f"{extract.stem.replace('_extract','')}_full.md")
     if out.exists() and not args.force:
-        print(f"[x_media_ci] exists, pass --force to overwrite: {out}", file=sys.stderr)
+        print(f"[citeseal] exists, pass --force to overwrite: {out}", file=sys.stderr)
         return 0
     return _run_script(
         "gen_article_md.py",
@@ -154,11 +154,11 @@ def cmd_pdf(args: argparse.Namespace) -> int:
     tp = tweet_paths(args.tweet_dir)
     extract = args.extract or _ensure_extract_json(tp, args) or tp.extract_json()
     if not extract or not extract.is_file():
-        print(f"[x_media_ci] skip (no extract.json): {args.tweet_dir}", file=sys.stderr)
+        print(f"[citeseal] skip (no extract.json): {args.tweet_dir}", file=sys.stderr)
         return 0
     out = args.out or (tp.exports_dir / f"{extract.stem.replace('_extract','')}_full.pdf")
     if out.exists() and not args.force:
-        print(f"[x_media_ci] exists, pass --force to overwrite: {out}", file=sys.stderr)
+        print(f"[citeseal] exists, pass --force to overwrite: {out}", file=sys.stderr)
         return 0
     return _run_script(
         "make_article_pdf.py",
@@ -284,7 +284,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
     root = Path(args.root).expanduser().resolve()
     tweet_dirs = find_tweet_dirs(root)
     if not tweet_dirs:
-        print(f"[x_media_ci] no tweet dirs under {root}", file=sys.stderr)
+        print(f"[citeseal] no tweet dirs under {root}", file=sys.stderr)
         return 1
     failures = 0
     for td in tweet_dirs:
@@ -310,7 +310,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
         rc = args.handler(sub_args)
         if rc != 0:
             failures += 1
-            print(f"[x_media_ci] FAIL {td} rc={rc}", file=sys.stderr)
+            print(f"[citeseal] FAIL {td} rc={rc}", file=sys.stderr)
     return 0 if failures == 0 else 2
 
 
@@ -363,15 +363,15 @@ def cmd_lint(args: argparse.Namespace) -> int:
     pyflakes = shutil.which("pyflakes") or shutil.which("pyflakes3")
     if not pyflakes:
         print(
-            "[x_media_ci] pyflakes not found. Install with:\n"
+            "[citeseal] pyflakes not found. Install with:\n"
             "    python -m pip install pyflakes",
             file=sys.stderr,
         )
         return 2
 
-    cmd = [pyflakes, str(_SCRIPTS_DIR), str(_HERE / "x_media_ci.py")]
+    cmd = [pyflakes, str(_SCRIPTS_DIR), str(_HERE / "citeseal.py")]
     pretty = " ".join(shlex.quote(c) for c in cmd)
-    print(f"[x_media_ci] $ {pretty}", file=sys.stderr)
+    print(f"[citeseal] $ {pretty}", file=sys.stderr)
     proc = subprocess.run(cmd)
     return proc.returncode
 
@@ -387,7 +387,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     import importlib
 
     print("=" * 60)
-    print("  x_media_ci doctor - environment diagnostics")
+    print("  citeseal doctor - environment diagnostics")
     print("=" * 60)
     print()
 
@@ -482,7 +482,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print("[Project layout]")
     project_root = _HERE.parent  # tools/ -> project root
     layout_checks = [
-        ("tools/x_media_ci.py", True),
+        ("tools/citeseal.py", True),
         ("tools/scripts/ci_common.py", True),
         ("tools/scripts/tweet_schema.py", True),
         ("tools/scripts/tweet_validate.py", True),
@@ -591,8 +591,8 @@ def cmd_manifest(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="x_media_ci",
-        description="Unified CLI for the x_media CI tools (delegates to tools/scripts/*.py).",
+        prog="citeseal",
+        description="Unified CLI for the CiteSeal tools (delegates to tools/scripts/*.py).",
     )
     sub = p.add_subparsers(dest="command", required=True)
 

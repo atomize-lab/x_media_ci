@@ -55,7 +55,7 @@ def ocr_image(img: Image.Image, lang: str = "chi_sim") -> str:
     tessdata_prefix = resolve_tessdata_prefix()
     if tessdata_prefix:
         env["TESSDATA_PREFIX"] = tessdata_prefix
-    tmp_dir = Path(tempfile.gettempdir()) / "x_media_ci_ocr_screens"
+    tmp_dir = Path(tempfile.gettempdir()) / "citeseal_ocr_screens"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     tmp_path = tmp_dir / "screen.png"
     img.save(tmp_path, format="PNG", optimize=True)

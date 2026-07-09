@@ -1,4 +1,4 @@
-# x_media_ci tools - unified Makefile
+# citeseal tools - unified Makefile
 #
 # Works on:
 #   * Ubuntu / WSL / macOS (GNU make)
@@ -19,15 +19,15 @@
 #   make fix  ROOT=...   - normalize tweet.json (dry-run by default; FIX_APPLY=1 to write)
 #   make transcode ROOT=. - transcode media/* to phone-friendly MP4 (dry-run by default; TC_APPLY=1 to run)
 #   make ci              - same as `make lint && make validate ROOT=../accounts`
-#   make server          - start the FastAPI wrapper around x_media_ci (port 8765)
+#   make server          - start the FastAPI wrapper around citeseal (port 8765)
 #   make app-bootstrap   - `flutter create .` over the existing tools/app dir
 #   make app-run         - `flutter run` on the current device
 #   make app-apk         - `flutter build apk --release`
-#   make dist-win        - PyInstaller -> dist/x_media_ci_server.exe (Windows)
-#   make dist-linux      - portable venv tarball -> dist/x_media_ci_server-linux-x64.tar.gz
+#   make dist-win        - PyInstaller -> dist/citeseal_server.exe (Windows)
+#   make dist-linux      - portable venv tarball -> dist/citeseal_server-linux-x64.tar.gz
 #   make dist-android    - docs only (Android needs Flutter SDK; see tools/app/BUILDING.md)
 #   make dist            - whatever this OS can produce
-#   make dist-gui        - PyInstaller -> dist/x_media_ci_app.exe (desktop GUI)
+#   make dist-gui        - PyInstaller -> dist/citeseal_app.exe (desktop GUI)
 
 PY      ?= python
 ROOT    ?= ../accounts
@@ -66,15 +66,15 @@ help:
 	@echo "  make fix   ROOT=.   - normalize tweet.json (FIX_APPLY=1 to write)"
 	@echo "  make transcode ROOT=. - transcode media/* (TC_APPLY=1 to run; needs ffmpeg)"
 	@echo "  make ci             - lint + validate (used by GitHub Actions)"
-	@echo "  make server         - FastAPI wrapper around x_media_ci (port 8765)"
+	@echo "  make server         - FastAPI wrapper around citeseal (port 8765)"
 	@echo "  make app-bootstrap  - flutter create . into the existing tools/app"
 	@echo "  make app-run        - flutter run on the current device"
 	@echo "  make app-apk        - flutter build apk --release"
-	@echo "  make dist-win       - PyInstaller -> dist/x_media_ci_server.exe"
+	@echo "  make dist-win       - PyInstaller -> dist/citeseal_server.exe"
 	@echo "  make dist-linux     - portable venv tarball -> dist/*-linux-x64.tar.gz"
 	@echo "  make dist-android   - print Android build steps (needs Flutter SDK)"
 	@echo "  make dist           - whatever this OS can produce"
-	@echo "  make dist-gui       - PyInstaller -> dist/x_media_ci_app.exe (desktop GUI)"
+	@echo "  make dist-gui       - PyInstaller -> dist/citeseal_app.exe (desktop GUI)"
 
 install:
 	$(PY) -m pip install -r requirements.txt
@@ -84,44 +84,44 @@ dev:
 
 md:
 	@test -n "$(DIR)" || (echo "DIR=<tweet_dir> is required" >&2; exit 2)
-	$(PY) x_media_ci.py md --tweet-dir "$(DIR)" $(PYFLAGS)
+	$(PY) citeseal.py md --tweet-dir "$(DIR)" $(PYFLAGS)
 
 pdf:
 	@test -n "$(DIR)" || (echo "DIR=<tweet_dir> is required" >&2; exit 2)
-	$(PY) x_media_ci.py pdf --tweet-dir "$(DIR)" $(PYFLAGS)
+	$(PY) citeseal.py pdf --tweet-dir "$(DIR)" $(PYFLAGS)
 
 ocr:
 	@test -n "$(DIR)" || (echo "DIR=<tweet_dir> is required" >&2; exit 2)
-	$(PY) x_media_ci.py ocr --tweet-dir "$(DIR)"
+	$(PY) citeseal.py ocr --tweet-dir "$(DIR)"
 
 all:
 	@test -n "$(DIR)" || (echo "DIR=<tweet_dir> is required" >&2; exit 2)
-	$(PY) x_media_ci.py all --tweet-dir "$(DIR)" --keep-going $(PYFLAGS) $(if $(filter 1,$(OCR)),--with-ocr,)
+	$(PY) citeseal.py all --tweet-dir "$(DIR)" --keep-going $(PYFLAGS) $(if $(filter 1,$(OCR)),--with-ocr,)
 
 batch:
-	$(PY) x_media_ci.py batch --root "$(ROOT)" --op "$(OP)" $(if $(filter 1,$(OCR)),--with-ocr,) $(PYFLAGS)
+	$(PY) citeseal.py batch --root "$(ROOT)" --op "$(OP)" $(if $(filter 1,$(OCR)),--with-ocr,) $(PYFLAGS)
 
 validate:
-	$(PY) x_media_ci.py validate --root "$(ROOT)"
+	$(PY) citeseal.py validate --root "$(ROOT)"
 
 lint:
-	$(PY) x_media_ci.py lint
+	$(PY) citeseal.py lint
 
 fix:
-	$(PY) x_media_ci.py fix --root "$(ROOT)" $(if $(filter 1,$(FIX_APPLY)),--apply,)
+	$(PY) citeseal.py fix --root "$(ROOT)" $(if $(filter 1,$(FIX_APPLY)),--apply,)
 
 transcode:
-	$(PY) x_media_ci.py transcode --root "$(ROOT)" $(if $(filter 1,$(TC_APPLY)),--apply,) --force
+	$(PY) citeseal.py transcode --root "$(ROOT)" $(if $(filter 1,$(TC_APPLY)),--apply,) --force
 
 ci: lint
-	$(PY) x_media_ci.py validate --root "$(ROOT)"
+	$(PY) citeseal.py validate --root "$(ROOT)"
 
 server:
 	$(PY) -m pip install -q -r server/requirements.txt
-	X_MEDIA_CI_PORT=$(PORT) $(PY) -m uvicorn server.app:app --host 0.0.0.0 --port $(PORT) --app-dir server
+	CITESEAL_PORT=$(PORT) $(PY) -m uvicorn server.app:app --host 0.0.0.0 --port $(PORT) --app-dir server
 
 app-bootstrap:
-	cd app && flutter create . --project-name x_media_ci_app --platforms=android,linux,windows
+	cd app && flutter create . --project-name citeseal_app --platforms=android,linux,windows
 	cd app && flutter pub get
 
 app-run:
@@ -132,8 +132,8 @@ app-apk:
 
 dist-win:
 	$(PY) -m pip install -q pyinstaller
-	$(PY) -m PyInstaller --noconfirm --clean server/x_media_ci_server.spec
-	@echo "Built: $(CURDIR)/dist/x_media_ci_server.exe"
+	$(PY) -m PyInstaller --noconfirm --clean server/citeseal_server.spec
+	@echo "Built: $(CURDIR)/dist/citeseal_server.exe"
 
 dist-linux:
 	bash server/build_linux.sh
@@ -157,7 +157,7 @@ endif
 dist-gui:
 	$(PY) -m pip install -q pyinstaller
 	$(PY) -m PyInstaller --noconfirm --clean app_desktop/tweet_gui.spec
-	@echo "Built: $(CURDIR)/dist/x_media_ci_app.exe"
+	@echo "Built: $(CURDIR)/dist/citeseal_app.exe"
 
 clean:
 	-@$(PY) -c "import shutil, pathlib; [shutil.rmtree(p, ignore_errors=True) for p in [pathlib.Path('build'), pathlib.Path('dist'), pathlib.Path('__pycache__')]]"

@@ -16,4 +16,4 @@ if [[ -z "$TWEET_DIR" ]]; then
 fi
 
 cd "$ROOT"
-exec python x_media_ci.py all --tweet-dir "$TWEET_DIR" --keep-going
+exec python citeseal.py all --tweet-dir "$TWEET_DIR" --keep-going

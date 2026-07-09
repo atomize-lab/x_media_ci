@@ -30,7 +30,7 @@ Hermes never touches the live web. Its input is the verified local archive.
 ### Step 1: Export a bundle (terminal)
 
 ```bash
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890 \
   --output /tmp/hermes_bundle \
   --hash-media
@@ -39,7 +39,7 @@ python tools/x_media_ci.py export-agent \
 ### Step 2: Generate a manifest for provenance (terminal)
 
 ```bash
-python tools/x_media_ci.py manifest \
+python tools/citeseal.py manifest \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890 \
   --dry-run > /tmp/hermes_bundle/manifest_preview.json
 ```
@@ -74,7 +74,7 @@ no API calls, no content drift.
 mkdir /tmp/trend_report
 
 for dir in accounts/example_user/tweets/2026/2026-07/*/; do
-  python tools/x_media_ci.py export-agent \
+  python tools/citeseal.py export-agent \
     --tweet-dir "$dir" \
     --output "/tmp/trend_report/$(basename "$dir")" \
     --hash-media
@@ -116,11 +116,11 @@ manifest generation.
 
 ```bash
 # Generate manifest in the item directory
-python tools/x_media_ci.py manifest \
+python tools/citeseal.py manifest \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890
 
 # Export bundle
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890 \
   --output /tmp/audit --hash-media
 ```
@@ -165,10 +165,10 @@ research digest from newly archived items.
 [Weekly cron]
     |
     v
-1. Export bundles for new items (xmc export-agent)
+1. Export bundles for new items (cs export-agent)
     |
     v
-2. Generate manifests for new items (xmc manifest)
+2. Generate manifests for new items (cs manifest)
     |
     v
 3. Hermes reads all new bundles

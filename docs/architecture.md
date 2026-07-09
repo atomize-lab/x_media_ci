@@ -21,7 +21,7 @@ Playwright capture (`tools/fetch_x.py`)
       ▼
 Local archive (`accounts/`, `indices/`)
       │
-      ├── CLI export/validate (`tools/x_media_ci.py`)
+      ├── CLI export/validate (`tools/citeseal.py`)
       ├── Markdown/PDF/OCR/transcode helpers (`tools/scripts/`)
       ├── Provenance manifest (`tools/scripts/build_manifest.py`)
       ├── Agent bundle export (`tools/scripts/build_agent_bundle.py`)
@@ -76,8 +76,8 @@ The archive can later support optional SQLite or full-text-search indices, but J
 Unified CLI:
 
 ```bash
-python tools/x_media_ci.py <op> --tweet-dir <dir>
-python tools/x_media_ci.py batch --root <accounts-root> --op all
+python tools/citeseal.py <op> --tweet-dir <dir>
+python tools/citeseal.py batch --root <accounts-root> --op all
 ```
 
 Implemented helper categories:
@@ -99,7 +99,7 @@ records the complete processing chain and file inventory with SHA-256
 hashes.
 
 ```bash
-x_media_ci manifest --tweet-dir <dir>
+citeseal manifest --tweet-dir <dir>
 ```
 
 The manifest provides:
@@ -125,7 +125,7 @@ The agent bundle is a portable, self-describing package derived from an
 item directory:
 
 ```bash
-x_media_ci export-agent --tweet-dir <dir> --output <bundle_dir>
+citeseal export-agent --tweet-dir <dir> --output <bundle_dir>
 ```
 
 The bundle (`bundle.json` + copied media) lets an AI agent consume the

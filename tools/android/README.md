@@ -1,6 +1,6 @@
 # Android 联调说明
 
-> 设计原则：让 **手机在本地浏览/复用** `x_media/CI` 里的内容，**不**在 Android 端做
+> 设计原则：让 **手机在本地浏览/复用** `citeseal` 里的内容，**不**在 Android 端做
 > 登录/反爬。所有抓取/导出仍在 PC 上跑完，再把结果同步到手机。
 
 ## 1) 路线选型
@@ -28,17 +28,17 @@ adb devices
 
 ```bash
 # 同步整棵 accounts 树到手机
-bash tools/android/adb_sync.sh push ../accounts /sdcard/Download/x_media_ci/accounts
+bash tools/android/adb_sync.sh push ../accounts /sdcard/Download/citeseal/accounts
 # 同步单条 tweet（用得最多）
 bash tools/android/adb_sync.sh push \
   "../accounts/0x_Discover/tweets/2026/2026-04/20260417T081047Z_2045052337996157219" \
-  /sdcard/Download/x_media_ci
+  /sdcard/Download/citeseal
 ```
 
 PowerShell / cmd 等价：
 
 ```powershell
-tools\android\adb_sync.cmd push ..\accounts /sdcard/Download/x_media_ci/accounts
+tools\android\adb_sync.cmd push ..\accounts /sdcard/Download/citeseal/accounts
 ```
 
 ## 4) 本地 HTTP 服务（在 PC 跑，手机浏览器访问）
@@ -72,11 +72,11 @@ adb reverse tcp:8765 tcp:8765
 - **打开 MD / PDF**：手机自带或第三方阅读器都能直接打开同步过去的 `*_full.md` / `*_full.pdf`。
 - **浏览 JSONL 索引**：
   - 启动 `serve.sh` 后访问 `http://<IP>:8765/indices/tweets.jsonl`
-  - 或下载 `x_media_ci` 索引浏览 App（任意 JSON viewer）。
+  - 或下载 `citeseal` 索引浏览 App（任意 JSON viewer）。
 - **批量导出（可选）**：在 PC 上：
 
   ```bash
-  python x_media_ci.py batch --root ../accounts --op all --force
+  python citeseal.py batch --root ../accounts --op all --force
   ```
 
   再 `adb_sync.sh push` 一次即可。

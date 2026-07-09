@@ -1,5 +1,5 @@
-name: x_media_ci_app
-description: x_media CI browser & remote runner for Win11 / Ubuntu22 / Android 14+
+name: citeseal_app
+description: CiteSeal browser & remote runner for Win11 / Ubuntu22 / Android 14+
 publish_to: "none"
 version: 0.1.0+1
 

@@ -1,6 +1,6 @@
-# x_media CI HTTP Server
+# CiteSeal HTTP Server
 
-A thin FastAPI wrapper around `tools/x_media_ci.py`. It exposes every CLI
+A thin FastAPI wrapper around `tools/citeseal.py`. It exposes every CLI
 operation as JSON so the Flutter app on **Win11 / Ubuntu22 / Android 14+**
 can drive the same scripts without re-implementing any logic.
 
@@ -51,9 +51,9 @@ until `status` is `done` or `failed`.
 
 | Var | Default | Description |
 |-----|---------|-------------|
-| `X_MEDIA_CI_ROOT` | `<tools>/../accounts` | Where to look for tweet dirs |
-| `X_MEDIA_CI_HOST` | `0.0.0.0`            | Bind host |
-| `X_MEDIA_CI_PORT` | `8765`                | Bind port |
+| `CITESEAL_ROOT` | `<tools>/../accounts` | Where to look for tweet dirs |
+| `CITESEAL_HOST` | `0.0.0.0`            | Bind host |
+| `CITESEAL_PORT` | `8765`                | Bind port |
 
 ## Reachability from Android (most common gotcha)
 

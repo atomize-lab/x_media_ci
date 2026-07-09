@@ -6,17 +6,16 @@
 
 我已把本次会话中用到的脚本整理到（你可以直接打开查看/复用）：
 
-- `x_media/CI/tools/scripts/`
+- `citeseal/tools/scripts/`
 
 > 注：之前我运行脚本时放在临时工作区；为方便你查看与复用，我已复制到 CI 目录下的 `tools/scripts/`。
 
 ## 2) 目录结构（CI）简述
 
 ```
-x_media/
-  CI/
-    README.md                         # CI 规范说明（总览）
-    indices/
+citeseal/
+  README.md                         # spec overview
+  indices/
       tweets.jsonl                    # 全量索引（每行一条 tweet/article 记录）
       by_handle/
         <handle>.jsonl                # 按账号索引
@@ -51,7 +50,7 @@ x_media/
 
 ## 3) 具体脚本与功能说明
 
-转换器脚本都在 `x_media/CI/tools/scripts/`（**把已落盘内容转 md/pdf/OCR**）：
+转换器脚本都在 `citeseal/tools/scripts/`（**把已落盘内容转 md/pdf/OCR**）：
 
 ### A. gen_article_md.py
 **用途**：把 `exports/article_*_extract.json` 生成 Markdown。
@@ -107,7 +106,7 @@ python make_ocr_extract.py --ocr-txt ocr.txt --out-json article_ocr_extract.json
 
 你指出的缺口在这里：之前只有转换器，没有“去 x.com 拉内容并落盘”的抓取器。
 
-已新增两个入口（都在 `x_media/CI/tools/`）：
+已新增两个入口（都在 `citeseal/tools/`）：
 
 - `fetch_x.py`
   - **用途**：Playwright 抓取器（不走 X API），支持：

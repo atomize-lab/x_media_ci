@@ -422,13 +422,13 @@ class TestCLISmoke:
     """Smoke test for the manifest CLI subcommand."""
 
     def test_manifest_via_cli(self, tmp_path: Path):
-        """Run `x_media_ci manifest --tweet-dir <path>` via subprocess."""
+        """Run `citeseal manifest --tweet-dir <path>` via subprocess."""
         import subprocess
         d = shutil.copytree(GOOD_DIR, tmp_path / "item")
         result = subprocess.run(
             [
                 sys.executable,
-                str(ROOT / "tools" / "x_media_ci.py"),
+                str(ROOT / "tools" / "citeseal.py"),
                 "manifest",
                 "--tweet-dir", str(d),
             ],

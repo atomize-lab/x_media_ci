@@ -47,7 +47,7 @@ except ImportError:
 
 
 MANIFEST_VERSION = "1.0"
-GENERATOR_NAME = "x_media_ci build_manifest"
+GENERATOR_NAME = "citeseal build_manifest"
 MANIFEST_FILENAME = "manifest.json"
 
 # File kind classification based on path relative to item directory.

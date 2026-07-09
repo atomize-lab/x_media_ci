@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a portable, self-contained Linux tarball for the x_media CI server.
+# Build a portable, self-contained Linux tarball for the CiteSeal server.
 #
 # Why not PyInstaller on Linux? On Ubuntu 22 + glibc 2.35, PyInstaller's
 # bootloader has to be rebuilt for the target ABI, and the resulting
@@ -7,7 +7,7 @@
 # small, debuggable, and runs on any glibc >= 2.31.
 #
 # Output:
-#   dist/x_media_ci_server-linux-x64.tar.gz
+#   dist/citeseal_server-linux-x64.tar.gz
 #
 # Usage:
 #   bash tools/server/build_linux.sh
@@ -18,14 +18,14 @@ DIST="$TOOLS/dist"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
-NAME="x_media_ci_server-linux-x64"
+NAME="citeseal_server-linux-x64"
 ROOT="$STAGE/$NAME"
 mkdir -p "$ROOT/bin" "$ROOT/venv" "$ROOT/scripts"
 
 echo "[1/5] Copying source..."
 cp -r "$TOOLS/server"            "$ROOT/server"
 cp -r "$TOOLS/scripts"           "$ROOT/scripts"
-cp    "$TOOLS/x_media_ci.py"     "$ROOT/"
+cp    "$TOOLS/citeseal.py"     "$ROOT/"
 cp    "$TOOLS/requirements.txt"  "$ROOT/"
 cp    "$TOOLS/server/requirements.txt" "$ROOT/server-requirements.txt"
 
@@ -40,20 +40,20 @@ pip install -r "$ROOT/server-requirements.txt" --quiet
 echo "[3/5] Writing run script..."
 cat > "$ROOT/bin/run.sh" <<'SH'
 #!/usr/bin/env bash
-# Start the x_media CI server. Override X_MEDIA_CI_ROOT if your
+# Start the CiteSeal server. Override CITESEAL_ROOT if your
 # accounts/ tree lives somewhere else.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-export X_MEDIA_CI_HOST="${X_MEDIA_CI_HOST:-0.0.0.0}"
-export X_MEDIA_CI_PORT="${X_MEDIA_CI_PORT:-8765}"
-export X_MEDIA_CI_ROOT="${X_MEDIA_CI_ROOT:-$ROOT/accounts}"
-exec "$ROOT/venv/bin/python" "$ROOT/x_media_ci_server.py" --host "$X_MEDIA_CI_HOST" --port "$X_MEDIA_CI_PORT"
+export CITESEAL_HOST="${CITESEAL_HOST:-0.0.0.0}"
+export CITESEAL_PORT="${CITESEAL_PORT:-8765}"
+export CITESEAL_ROOT="${CITESEAL_ROOT:-$ROOT/accounts}"
+exec "$ROOT/venv/bin/python" "$ROOT/citeseal_server.py" --host "$CITESEAL_HOST" --port "$CITESEAL_PORT"
 SH
 chmod +x "$ROOT/bin/run.sh"
 
 # Drop a tiny shim that points at uvicorn via the venv's python.
-cat > "$ROOT/x_media_ci_server.py" <<'PY'
+cat > "$ROOT/citeseal_server.py" <<'PY'
 """Entry point used by the bundled run.sh."""
 import os
 import uvicorn
@@ -62,31 +62,31 @@ from server.app import app
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
-    p.add_argument("--host", default=os.environ.get("X_MEDIA_CI_HOST", "0.0.0.0"))
+    p.add_argument("--host", default=os.environ.get("CITESEAL_HOST", "0.0.0.0"))
     p.add_argument("--port", type=int,
-                   default=int(os.environ.get("X_MEDIA_CI_PORT", "8765")))
+                   default=int(os.environ.get("CITESEAL_PORT", "8765")))
     args = p.parse_args()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 PY
 
 echo "[4/5] Writing README + .env.example..."
 cat > "$ROOT/README.txt" <<'TXT'
-x_media CI server — Linux x64 portable
+CiteSeal server — Linux x64 portable
 =====================================
 
 Quick start:
 
-    tar -xzf x_media_ci_server-linux-x64.tar.gz
-    cd x_media_ci_server-linux-x64
-    X_MEDIA_CI_ROOT=/path/to/your/accounts ./bin/run.sh
+    tar -xzf citeseal_server-linux-x64.tar.gz
+    cd citeseal_server-linux-x64
+    CITESEAL_ROOT=/path/to/your/accounts ./bin/run.sh
 
 Then open http://localhost:8765/docs for the Swagger UI.
 
 Environment variables:
 
-    X_MEDIA_CI_HOST  bind host (default 0.0.0.0)
-    X_MEDIA_CI_PORT  bind port (default 8765)
-    X_MEDIA_CI_ROOT  path to your accounts/ tree
+    CITESEAL_HOST  bind host (default 0.0.0.0)
+    CITESEAL_PORT  bind port (default 8765)
+    CITESEAL_ROOT  path to your accounts/ tree
 TXT
 
 echo "[5/5] Tarball..."

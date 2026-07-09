@@ -569,7 +569,7 @@ class _LocalCaptureScreenState extends State<_LocalCaptureScreen> {
           "${dtp.toUtc().year.toString().padLeft(4, "0")}${dtp.toUtc().month.toString().padLeft(2, "0")}${dtp.toUtc().day.toString().padLeft(2, "0")}T${dtp.toUtc().hour.toString().padLeft(2, "0")}${dtp.toUtc().minute.toString().padLeft(2, "0")}${dtp.toUtc().second.toString().padLeft(2, "0")}Z";
       final tweetDir = Directory(p.join(
         base.path,
-        "x_media_ci",
+        "citeseal",
         "accounts",
         _handle,
         "tweets",

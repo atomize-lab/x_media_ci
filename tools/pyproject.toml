@@ -1,7 +1,7 @@
 [project]
-name = "x_media_ci"
+name = "citeseal"
 version = "0.1.0"
-description = "CLI helpers for the x_media/CI long-term tweet storage layout."
+description = "Local-first, auditable, agent-ready social media research archive CLI."
 requires-python = ">=3.9"
 readme = "README.md"
 license = { text = "MIT" }
@@ -20,8 +20,8 @@ dev = [
 ]
 
 [project.scripts]
-# Lets users do:  x-media-ci md --tweet-dir ...
-x-media-ci = "x_media_ci.cli:main"
+# Lets users do:  citeseal md --tweet-dir ...
+citeseal = "citeseal.cli:main"
 
 [tool.pyflakes]
 exclude = ["build", "dist"]

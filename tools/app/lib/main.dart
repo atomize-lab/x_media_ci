@@ -24,7 +24,7 @@ class XMediaCiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "x_media CI",
+      title: "CiteSeal",
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
@@ -56,7 +56,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("x_media CI — ${_titles[_index]}"),
+        title: Text("CiteSeal — ${_titles[_index]}"),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),

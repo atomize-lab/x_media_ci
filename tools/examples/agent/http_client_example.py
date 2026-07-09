@@ -2,7 +2,7 @@
 """Fetch and display an agent bundle via the local HTTP server.
 
 Prerequisites:
-    1. Start the local server:  xmc serve
+    1. Start the local server:  cs serve
     2. Have at least one archived item in the CI root.
 
 Usage:
@@ -39,7 +39,7 @@ def fetch_bundle(base_url: str, handle: str, tweet_id: str) -> dict:
         sys.exit(1)
     except urllib.error.URLError as e:
         print(f"Connection Error: {e.reason}", file=sys.stderr)
-        print("Hint: Start the server with 'xmc serve' first.", file=sys.stderr)
+        print("Hint: Start the server with 'cs serve' first.", file=sys.stderr)
         sys.exit(1)
 
 
@@ -122,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
         description="Fetch and display an agent bundle from the local server."
     )
     parser.add_argument("--base-url", default="http://localhost:8000",
-                        help="Base URL of the x_media_ci server.")
+                        help="Base URL of the citeseal server.")
     parser.add_argument("--handle", default="example_user",
                         help="Author handle (without @).")
     parser.add_argument("--tweet-id", default="1234567890",

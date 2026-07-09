@@ -20,7 +20,7 @@ Brief description of what this PR changes and why.
 
 How did you verify this change?
 
-- [ ] `python tools/x_media_ci.py lint` passes (no new pyflakes issues)
+- [ ] `python tools/citeseal.py lint` passes (no new pyflakes issues)
 - [ ] `python tools/scripts/tweet_validate.py tests/fixtures/...` passes
 - [ ] `python -m pytest tests/` passes (all 88 tests)
 - [ ] Tested manually (describe below)

@@ -26,7 +26,7 @@ def ocr_image_chunk(img: Image.Image, lang: str = "chi_sim+eng") -> str:
         env["TESSDATA_PREFIX"] = tessdata_prefix
 
     # Write a temporary png for this chunk (tesseract works best with file paths)
-    tmp_dir = Path(tempfile.gettempdir()) / "x_media_ci_ocr_chunks"
+    tmp_dir = Path(tempfile.gettempdir()) / "citeseal_ocr_chunks"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     tmp_path = tmp_dir / "chunk.png"
     img.save(tmp_path, format="PNG", optimize=True)

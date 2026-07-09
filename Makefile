@@ -13,7 +13,7 @@ PYTHON_FALLBACK := python3
 PYTEST := $(CURDIR)/.venv/bin/python -m pytest
 FIXTURE_DIR := tests/fixtures/accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890
 SERVER_SCRIPT := tools/server/run_server.sh
-ARCHIVE_ROOT := $(CURDIR)/x_media/CI/accounts
+ARCHIVE_ROOT := $(CURDIR)/citeseal/accounts
 
 # Use venv python if it exists, otherwise system python3
 ifeq ($(wildcard .venv/bin/python),)
@@ -44,7 +44,7 @@ test-quiet: ## Run tests quietly (summary only)
 
 .PHONY: lint
 lint: ## Run pyflakes lint over bundled scripts
-	cd tools && $(PYTHON) x_media_ci.py lint
+	cd tools && $(PYTHON) citeseal.py lint
 
 .PHONY: validate-fixtures
 validate-fixtures: ## Validate test fixtures
@@ -63,13 +63,13 @@ ci: lint validate-fixtures test-quiet ## Run the full CI pipeline locally (lint 
 serve: ## Start the local API server
 	@echo "Starting server on http://localhost:8765"
 	@echo "Archive root: $(ARCHIVE_ROOT)"
-	X_MEDIA_CI_ROOT="$(ARCHIVE_ROOT)" bash $(SERVER_SCRIPT)
+	CITESEAL_ROOT="$(ARCHIVE_ROOT)" bash $(SERVER_SCRIPT)
 
 .PHONY: smoke-cli
 smoke-cli: ## Run a CLI smoke test (validate + lint, no network)
 	@echo "=== Smoke test ==="
 	@echo "--- lint ---"
-	cd tools && $(PYTHON) x_media_ci.py lint
+	cd tools && $(PYTHON) citeseal.py lint
 	@echo "--- validate fixture ---"
 	$(PYTHON) tools/scripts/tweet_validate.py $(FIXTURE_DIR)
 	@echo "--- pytest (subset) ---"
@@ -79,7 +79,7 @@ smoke-cli: ## Run a CLI smoke test (validate + lint, no network)
 
 .PHONY: doctor
 doctor: ## Check environment and dependencies
-	$(PYTHON) tools/x_media_ci.py doctor
+	$(PYTHON) tools/citeseal.py doctor
 
 .PHONY: clean
 clean: ## Remove generated files (keeps .venv and source)

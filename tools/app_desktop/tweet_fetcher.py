@@ -1,17 +1,17 @@
 """Tweet fetcher used by the desktop GUI.
 
 The GUI does **not** talk to X directly. Instead it shells out to
-``x_media_ci.py`` and treats the existing on-disk ``tweet.json`` plus
+``citeseal.py`` and treats the existing on-disk ``tweet.json`` plus
 ``media/`` tree as the source of truth. This keeps the GUI in lock-step
 with every other consumer (CLI, FastAPI server, Flutter app).
 
 Strategy:
   1. The user pastes a tweet URL.
-  2. We try ``x_media_ci.py`` which currently expects a local
+  2. We try ``citeseal.py`` which currently expects a local
      ``tweet_dir`` (a folder already populated by your existing pipeline).
      If only a URL is given, we run a small helper that maps the URL to
      an expected ``tweet_dir`` path and lets the user pick/create it.
-  3. "Save" buttons run the corresponding ``x_media_ci`` sub-command
+  3. "Save" buttons run the corresponding ``citeseal`` sub-command
      (``md``, ``pdf``, ``transcode``) on that directory and stream
      progress back via a callback.
 
@@ -114,7 +114,7 @@ def guess_tweet_dir(ref: TweetRef, save_root: Path) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Running x_media_ci as a subprocess
+# Running citeseal as a subprocess
 # ---------------------------------------------------------------------------
 
 ProgressCB = Callable[[str, float], None]   # (line, fraction 0..1)
@@ -132,17 +132,17 @@ def _tools_dir() -> Path:
     """Resolve <tools> directory whether running as script or frozen exe.
 
     Frozen layout (PyInstaller --onedir):
-        <exedir>/x_media_ci_app.exe
-        <exedir>/x_media_ci.py
+        <exedir>/citeseal_app.exe
+        <exedir>/citeseal.py
         <exedir>/fetch_tweet.py
         <exedir>/fetch_x.py
         <exedir>/scripts/...
-    The data files (x_media_ci.py etc.) are dropped at the top level
+    The data files (citeseal.py etc.) are dropped at the top level
     alongside the exe by COLLECT.
 
     Script layout (python tools/app_desktop/tweet_gui.py):
         tools/app_desktop/tweet_fetcher.py   <- this file
-        tools/x_media_ci.py
+        tools/citeseal.py
         tools/fetch_tweet.py
     so parent.parent == tools/.
     """
@@ -155,14 +155,14 @@ def _tools_dir() -> Path:
             exe_dir / "_internal",
             Path(getattr(sys, "_MEIPASS", exe_dir)),
         ):
-            if (cand / "x_media_ci.py").is_file():
+            if (cand / "citeseal.py").is_file():
                 return cand
         return exe_dir
     return Path(__file__).resolve().parent.parent  # app_desktop/ -> tools/
 
 
-def _x_media_ci_py() -> Path:
-    return _tools_dir() / "x_media_ci.py"
+def _citeseal_py() -> Path:
+    return _tools_dir() / "citeseal.py"
 
 
 def _python_exe() -> str:
@@ -178,17 +178,17 @@ def _python_exe() -> str:
     return sys.executable or "python"
 
 
-def run_x_media_ci(op: str, args: list[str], *,
+def run_citeseal(op: str, args: list[str], *,
                    cwd: Optional[Path] = None,
                    on_line: Optional[ProgressCB] = None) -> RunResult:
-    """Run ``python x_media_ci.py <op> <args>`` and stream stdout/stderr.
+    """Run ``python citeseal.py <op> <args>`` and stream stdout/stderr.
 
     ``on_line`` is called for each new line (text only). The fraction is
     0..1 (best effort; 0/1 from each child process).
     """
-    ci_py = _x_media_ci_py()
+    ci_py = _citeseal_py()
     if not ci_py.is_file():
-        return RunResult(returncode=127, error=f"x_media_ci.py not found: {ci_py}")
+        return RunResult(returncode=127, error=f"citeseal.py not found: {ci_py}")
     cmd = [_python_exe(), str(ci_py), op, *args]
     return _run_streaming(cmd, cwd=cwd, on_line=on_line)
 
@@ -270,7 +270,7 @@ def action_fetch(url: str, save_root: Path, *,
          ``python fetch_tweet.py <url> --out <tweet_dir>`` (which
          delegates to ``tools/fetch_x.py``). The scraper downloads
          images / mp4 / m3u8→mp4 and writes ``tweet.json``.
-      5. Then run ``x_media_ci fix --apply`` to normalize the result
+      5. Then run ``citeseal fix --apply`` to normalize the result
          and ``validate`` to surface any issues.
     """
     ref = parse_tweet_url(url)
@@ -283,7 +283,7 @@ def action_fetch(url: str, save_root: Path, *,
     if existing:
         ref.tweet_dir = existing
         on_line and on_line(f"[fetch] found existing dir: {existing}", 0.3)
-        rr = run_x_media_ci("validate", [str(existing)],
+        rr = run_citeseal("validate", [str(existing)],
                             cwd=existing, on_line=on_line)
         return ref, rr
 
@@ -356,7 +356,7 @@ def action_fetch(url: str, save_root: Path, *,
         return ref, rr
 
     on_line and on_line("[fetch] scraper succeeded; running fix", 0.9)
-    fix = run_x_media_ci("fix", [str(target), "--apply"],
+    fix = run_citeseal("fix", [str(target), "--apply"],
                          cwd=target, on_line=on_line)
     on_line and on_line(f"[fetch] fix rc={fix.returncode}", 1.0)
     return ref, RunResult(returncode=0, stdout=rr.stdout + fix.stdout)
@@ -410,7 +410,7 @@ def _create_skeleton(target: Path, ref: TweetRef) -> None:
 def action_save_md(ref: TweetRef, *, on_line: Optional[ProgressCB] = None) -> RunResult:
     if not ref.tweet_dir:
         return RunResult(returncode=2, error="No tweet_dir; run 'Fetch' first")
-    return run_x_media_ci("md",
+    return run_citeseal("md",
                           ["--tweet-dir", str(ref.tweet_dir), "--force"],
                           cwd=ref.tweet_dir, on_line=on_line)
 
@@ -418,7 +418,7 @@ def action_save_md(ref: TweetRef, *, on_line: Optional[ProgressCB] = None) -> Ru
 def action_save_pdf(ref: TweetRef, *, on_line: Optional[ProgressCB] = None) -> RunResult:
     if not ref.tweet_dir:
         return RunResult(returncode=2, error="No tweet_dir; run 'Fetch' first")
-    return run_x_media_ci("pdf",
+    return run_citeseal("pdf",
                           ["--tweet-dir", str(ref.tweet_dir), "--force"],
                           cwd=ref.tweet_dir, on_line=on_line)
 
@@ -429,12 +429,12 @@ def action_save_media(ref: TweetRef, *,
     if not ref.tweet_dir:
         return RunResult(returncode=2, error="No tweet_dir; run 'Fetch' first")
     if also_transcode:
-        return run_x_media_ci("transcode",
+        return run_citeseal("transcode",
                               ["--tweet-dir", str(ref.tweet_dir), "--force",
                                "--apply"],
                               cwd=ref.tweet_dir, on_line=on_line)
     # Just run fix + validate; media itself is presumed to be in place
-    return run_x_media_ci("fix",
+    return run_citeseal("fix",
                           ["--root", str(ref.tweet_dir.parent.parent.parent.parent
                                           if ref.tweet_dir else "."), "--apply"],
                           cwd=ref.tweet_dir, on_line=on_line)
@@ -445,7 +445,7 @@ def action_save_all(ref: TweetRef, *,
     """Convenience: md + pdf + transcode in one shot."""
     if not ref.tweet_dir:
         return RunResult(returncode=2, error="No tweet_dir; run 'Fetch' first")
-    return run_x_media_ci("all",
+    return run_citeseal("all",
                           ["--tweet-dir", str(ref.tweet_dir),
                            "--keep-going", "--force", "--with-ocr"],
                           cwd=ref.tweet_dir, on_line=on_line)

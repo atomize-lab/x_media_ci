@@ -1,13 +1,13 @@
 # Agent Bundle Examples
 
 This directory contains runnable examples showing how AI agents can consume
-agent bundles exported by `x_media_ci`.
+agent bundles exported by `citeseal`.
 
 ## Quick Start
 
 ```bash
 # 1. Export a bundle from a tweet directory
-xmc export-agent \
+cs export-agent \
   --tweet-dir path/to/tweet_dir \
   --output my_bundle \
   --hash-media

@@ -1,4 +1,4 @@
-# Building the x_media CI Flutter app (Android 14+)
+# Building the CiteSeal Flutter app (Android 14+)
 
 This project uses a single Flutter codebase to target **Win11 / Ubuntu22 / Android 14+**.
 You only need the Flutter SDK installed locally if you want to *run* the app
@@ -12,7 +12,7 @@ on a USB-connected device or produce a one-off APK on your own machine.
 
 # 2) one-time bootstrap inside this folder
 cd tools/app
-flutter create . --project-name x_media_ci_app --platforms=android,linux,windows
+flutter create . --project-name citeseal_app --platforms=android,linux,windows
 flutter pub get
 
 # 3) build the Android 14+ release APK
@@ -29,7 +29,7 @@ flutter devices
 flutter run -d <device_id>
 ```
 
-For a phone that should talk to the **x_media CI server on a PC** over the same
+For a phone that should talk to the **CiteSeal server on a PC** over the same
 WiFi, set the server's URL in the app's **Settings** tab to
 `http://<PC_IP>:8765`. For USB-only setups use `adb reverse`:
 

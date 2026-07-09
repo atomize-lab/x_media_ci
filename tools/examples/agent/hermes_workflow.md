@@ -5,7 +5,7 @@
 Export a bundle first:
 
 ```bash
-xmc export-agent \
+cs export-agent \
   --tweet-dir path/to/tweet_dir \
   --output my_bundle \
   --hash-media
@@ -28,9 +28,9 @@ Export multiple bundles, then use Hermes for cross-item analysis:
 
 ```bash
 mkdir research_bundles
-xmc export-agent --tweet-dir tweet_1 --output research_bundles/item_1
-xmc export-agent --tweet-dir tweet_2 --output research_bundles/item_2
-xmc export-agent --tweet-dir tweet_3 --output research_bundles/item_3
+cs export-agent --tweet-dir tweet_1 --output research_bundles/item_1
+cs export-agent --tweet-dir tweet_2 --output research_bundles/item_2
+cs export-agent --tweet-dir tweet_3 --output research_bundles/item_3
 ```
 
 In Hermes:
@@ -48,7 +48,7 @@ For each matching item, report:
 
 Use Hermes skills to build a recurring research digest:
 
-1. **Export**: Run `xmc export-agent` on new archived items
+1. **Export**: Run `cs export-agent` on new archived items
 2. **Read**: Hermes reads each `bundle.json` via `read_file`
 3. **Summarize**: Hermes generates per-item summaries
 4. **Cross-reference**: Hermes checks `related_items` for thread connections
@@ -69,7 +69,7 @@ Then produce a summary table with columns:
 
 ## HTTP Consumption (with local server)
 
-If you're running the local server (`xmc serve`), Hermes can also fetch
+If you're running the local server (`cs serve`), Hermes can also fetch
 bundles via HTTP using `curl` or Python `requests`:
 
 ```

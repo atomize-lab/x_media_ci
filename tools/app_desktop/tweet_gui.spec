@@ -1,10 +1,10 @@
-# PyInstaller spec for the x_media CI DESKTOP app.
+# PyInstaller spec for the CiteSeal DESKTOP app.
 #
 # Output (Windows):
-#   app_desktop/dist/x_media_ci_app.exe   (single file, no console)
+#   app_desktop/dist/citeseal_app.exe   (single file, no console)
 #
 # Output (Linux):
-#   app_desktop/dist/x_media_ci_app       (single binary, no console)
+#   app_desktop/dist/citeseal_app       (single binary, no console)
 #
 # Build:
 #   pyinstaller --noconfirm --clean app_desktop/tweet_gui.spec
@@ -22,7 +22,7 @@ block_cipher = None
 hiddenimports = collect_submodules("tkinter")
 
 # Bundle the whole <tools> tree so the frozen app can find
-# x_media_ci.py + scripts/. We exclude the heavier server package
+# citeseal.py + scripts/. We exclude the heavier server package
 # (FastAPI) and the Flutter app skeleton.
 app_dir = Path(SPECPATH).resolve()           # app_desktop/
 tools_root = app_dir.parent                  # tools/
@@ -30,12 +30,12 @@ tools_root = app_dir.parent                  # tools/
 # Build a list of (source, dest_in_bundle) pairs.
 datas: list[tuple[str, str]] = []
 
-# Whole <tools>/scripts/ — required by x_media_ci
+# Whole <tools>/scripts/ — required by citeseal
 datas.append((str(tools_root / "scripts"), "scripts"))
 
-# x_media_ci.py + the rest of tools/* (server, etc.) — only the files
+# citeseal.py + the rest of tools/* (server, etc.) — only the files
 # we actually need.
-for fname in ("x_media_ci.py",
+for fname in ("citeseal.py",
               "fetch_tweet.py",
               "fetch_x.py",
               "Makefile", "make.cmd",
@@ -86,7 +86,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="x_media_ci_app",
+    name="citeseal_app",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -107,5 +107,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name="x_media_ci_app",
+    name="citeseal_app",
 )

@@ -1,4 +1,4 @@
-"""FastAPI wrapper around the x_media CI CLI.
+"""FastAPI wrapper around the CiteSeal CLI.
 
 This server does **not** re-implement any of the existing logic. It
 simply exposes the same operations via JSON so that the Flutter app
@@ -28,7 +28,7 @@ Endpoints (all JSON unless noted):
     POST /api/validate/item/{item_id}        -> on-demand validation of an item
 
 The CI root is auto-discovered relative to this file, but can be
-overridden with the X_MEDIA_CI_ROOT env var.
+overridden with the CITESEAL_ROOT env var.
 """
 from __future__ import annotations
 
@@ -87,7 +87,7 @@ from tweet_schema import validate_tweet_dir  # noqa: E402
 # Configuration
 # ---------------------------------------------------------------------------
 
-CI_ROOT = Path(os.environ.get("X_MEDIA_CI_ROOT")
+CI_ROOT = Path(os.environ.get("CITESEAL_ROOT")
                or (_TOOLS / ".." / "accounts")).resolve()
 # When running frozen via PyInstaller, ``_TOOLS`` is the unpacked
 # bootloader dir, so ``_TOOLS / ".." / "accounts"`` points to nonsense
@@ -102,7 +102,7 @@ if (not CI_ROOT.is_dir()) and getattr(sys, "frozen", False):
 
 
 def _resolve_python() -> str:
-    """Pick the interpreter used to spawn ``x_media_ci.py``.
+    """Pick the interpreter used to spawn ``citeseal.py``.
 
     In dev mode, ``sys.executable`` is the active Python — perfect.
     In PyInstaller-frozen mode, ``sys.executable`` is the frozen
@@ -122,18 +122,18 @@ def _resolve_python() -> str:
 
 PYTHON = _resolve_python()
 
-# Locate x_media_ci.py. In dev mode it lives at <tools>/x_media_ci.py.
+# Locate citeseal.py. In dev mode it lives at <tools>/citeseal.py.
 # In PyInstaller-frozen mode, the .spec bundles it into sys._MEIPASS.
-X_MEDIA_CI = _TOOLS / "x_media_ci.py"
-if not X_MEDIA_CI.is_file():
+CITESEAL = _TOOLS / "citeseal.py"
+if not CITESEAL.is_file():
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
-        candidate = Path(meipass) / "x_media_ci.py"
+        candidate = Path(meipass) / "citeseal.py"
         if candidate.is_file():
-            X_MEDIA_CI = candidate
+            CITESEAL = candidate
 
-if not X_MEDIA_CI.is_file():
-    raise RuntimeError(f"x_media_ci.py not found (tried {_TOOLS} and sys._MEIPASS)")
+if not CITESEAL.is_file():
+    raise RuntimeError(f"citeseal.py not found (tried {_TOOLS} and sys._MEIPASS)")
 
 
 # ---------------------------------------------------------------------------
@@ -141,8 +141,8 @@ if not X_MEDIA_CI.is_file():
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="x_media CI Server",
-    description=("HTTP wrapper around the x_media CI CLI. "
+    title="CiteSeal Server",
+    description=("HTTP wrapper around the CiteSeal CLI. "
                  "Use from the Flutter app on Win11 / Ubuntu22 / Android 14+."),
     version="0.1.0",
 )
@@ -191,7 +191,7 @@ JOBS: dict[str, Job] = {}
 
 async def _run_job(job: Job) -> None:
     job.status = "running"
-    cmd = [PYTHON, str(X_MEDIA_CI), job.op, *job.args_to_argv()]
+    cmd = [PYTHON, str(CITESEAL), job.op, *job.args_to_argv()]
     pretty = " ".join(shlex.quote(c) for c in cmd)
     job.stdout += f"$ {pretty}\n"
     try:
@@ -237,7 +237,7 @@ async def health() -> dict:
         "ci_root": str(CI_ROOT),
         "ci_root_exists": CI_ROOT.is_dir(),
         "python": PYTHON,
-        "x_media_ci": str(X_MEDIA_CI),
+        "citeseal": str(CITESEAL),
         "ts": time.time(),
     }
 
@@ -610,7 +610,7 @@ async def export_agent_bundle(req: BundleExportRequest) -> dict:
 
     results: list[dict] = []
     errors: list[dict] = []
-    base_output = Path(tempfile.mkdtemp(prefix="xmc_bundles_"))
+    base_output = Path(tempfile.mkdtemp(prefix="cs_bundles_"))
 
     for idx, item_id in enumerate(req.item_ids):
         td = _locate_tweet(item_id)
@@ -684,8 +684,8 @@ async def validate_item(item_id: str) -> dict:
 
 def main() -> None:  # pragma: no cover
     import uvicorn
-    host = os.environ.get("X_MEDIA_CI_HOST", "0.0.0.0")
-    port = int(os.environ.get("X_MEDIA_CI_PORT", "18765"))
+    host = os.environ.get("CITESEAL_HOST", "0.0.0.0")
+    port = int(os.environ.get("CITESEAL_PORT", "18765"))
     uvicorn.run("app:app", host=host, port=port, reload=False)
 
 

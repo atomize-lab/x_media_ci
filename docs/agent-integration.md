@@ -97,7 +97,7 @@ The FastAPI server exposes the archive over local HTTP. This is useful when the 
 **Start the server:**
 
 ```bash
-X_MEDIA_CI_ROOT="$PWD/x_media/CI/accounts" bash tools/server/run_server.sh
+CITESEAL_ROOT="$PWD/citeseal/accounts" bash tools/server/run_server.sh
 # API docs at http://localhost:8765/docs
 ```
 
@@ -165,7 +165,7 @@ Claude reads stable local files, produces a summary grounded in verifiable artif
 **Workflow:**
 
 1. **Capture phase:** Use `fetch_x.py` to archive posts from 5 handles (limit 20 each).
-2. **Export phase:** Run `x_media_ci.py batch --op all` to generate Markdown + OCR for every item.
+2. **Export phase:** Run `citeseal.py batch --op all` to generate Markdown + OCR for every item.
 3. **Agent phase:** Hermes reads `indices/tweets.jsonl`, filters by date range, loads relevant `article.md` files, and generates a trend report.
 4. **Review phase:** The Flutter client lets you review and tag items before the report is finalized.
 
@@ -244,7 +244,7 @@ with hashes, provenance, and trust flags. No directory walking required.
 **Export a bundle:**
 
 ```bash
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir accounts/<handle>/tweets/YYYY/YYYY-MM/<timestamp>_<id> \
   --output my_bundle \
   --hash-media
@@ -263,7 +263,7 @@ A manifest (`manifest.json`) lives in the item directory and records:
 **Generate a manifest:**
 
 ```bash
-python tools/x_media_ci.py manifest \
+python tools/citeseal.py manifest \
   --tweet-dir accounts/<handle>/tweets/YYYY/YYYY-MM/<timestamp>_<id>
 ```
 

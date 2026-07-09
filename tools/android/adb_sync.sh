@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# adb_sync.sh — push / pull the x_media CI tree to/from a connected Android device.
+# adb_sync.sh — push / pull the CiteSeal tree to/from a connected Android device.
 #
 # Usage:
 #   bash tools/android/adb_sync.sh push <local_path> <android_path>

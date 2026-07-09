@@ -12,4 +12,4 @@ TARGET="${1:-$ROOT/../accounts}"
 shift || true
 
 cd "$ROOT"
-exec python x_media_ci.py validate --root "$TARGET" "$@"
+exec python citeseal.py validate --root "$TARGET" "$@"

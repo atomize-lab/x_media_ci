@@ -20,7 +20,7 @@ import pytest
 # Project root (parent of tests/)
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "tools" / "scripts"
-CLI = ROOT / "tools" / "x_media_ci.py"
+CLI = ROOT / "tools" / "citeseal.py"
 FIXTURES = ROOT / "tests" / "fixtures"
 
 GOOD_DIR = (
@@ -114,7 +114,7 @@ class TestFixCLI:
         assert not meta["author_handle"].startswith("@")
 
 
-# ── x_media_ci.py ───────────────────────────────────────────────────────────
+# ── citeseal.py ───────────────────────────────────────────────────────────
 
 class TestUnifiedCLI:
     def test_help_exits_0(self):
@@ -137,7 +137,7 @@ class TestUnifiedCLI:
         """doctor should run, print diagnostics, and exit 0 (warnings only, no errors)."""
         r = _run(CLI, ["doctor"])
         assert r.returncode == 0
-        assert "x_media_ci doctor" in r.stdout
+        assert "citeseal doctor" in r.stdout
         assert "Python" in r.stdout
         assert "Project layout" in r.stdout
 

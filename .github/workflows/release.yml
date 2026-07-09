@@ -37,23 +37,23 @@ jobs:
           python -m pip install -r tools/requirements.txt
           python -m pip install -r tools/server/requirements.txt
       - name: Build with PyInstaller
-        run: pyinstaller --noconfirm --clean tools/server/x_media_ci_server.spec
+        run: pyinstaller --noconfirm --clean tools/server/citeseal_server.spec
       - name: Verify exe
         run: |
-          tools\dist\x_media_ci_server.exe &
-          $env:X_MEDIA_CI_PORT = "8765"
+          tools\dist\citeseal_server.exe &
+          $env:CITESEAL_PORT = "8765"
           Start-Sleep -Seconds 5
           (Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8765/api/health").Content
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: x_media_ci_server-windows-x64
-          path: tools/dist/x_media_ci_server.exe
+          name: citeseal_server-windows-x64
+          path: tools/dist/citeseal_server.exe
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: tools/dist/x_media_ci_server.exe
+          files: tools/dist/citeseal_server.exe
 
   linux-tarball:
     name: Linux server .tar.gz
@@ -68,20 +68,20 @@ jobs:
         run: bash tools/server/build_linux.sh
       - name: Smoke-test
         run: |
-          tar -xzf tools/dist/x_media_ci_server-linux-x64.tar.gz -C /tmp
-          X_MEDIA_CI_ROOT=$PWD/../accounts /tmp/x_media_ci_server-linux-x64/bin/run.sh &
+          tar -xzf tools/dist/citeseal_server-linux-x64.tar.gz -C /tmp
+          CITESEAL_ROOT=$PWD/../accounts /tmp/citeseal_server-linux-x64/bin/run.sh &
           sleep 5
           curl -sf http://127.0.0.1:8765/api/health
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: x_media_ci_server-linux-x64
-          path: tools/dist/x_media_ci_server-linux-x64.tar.gz
+          name: citeseal_server-linux-x64
+          path: tools/dist/citeseal_server-linux-x64.tar.gz
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: tools/dist/x_media_ci_server-linux-x64.tar.gz
+          files: tools/dist/citeseal_server-linux-x64.tar.gz
 
   android-apk:
     name: Android 14+ APK
@@ -102,7 +102,7 @@ jobs:
       - name: Bootstrap Flutter project
         working-directory: tools/app
         run: |
-          flutter create . --project-name x_media_ci_app --platforms=android --overwrite
+          flutter create . --project-name citeseal_app --platforms=android --overwrite
           git -C ../.. checkout -- tools/app/lib tools/app/pubspec.yaml tools/app/analysis_options.yaml
           flutter pub get
       - name: Patch Android Kotlin version
@@ -217,7 +217,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: x_media_ci_app-android-release
+          name: citeseal_app-android-release
           path: tools/app/build/app/outputs/flutter-apk/app-release.apk
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')

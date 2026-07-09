@@ -1,4 +1,4 @@
-"""Shared helpers for the x_media CI tools.
+"""Shared helpers for the CiteSeal tools.
 
 This module is intentionally tiny and dependency-free so that any of the
 existing scripts can ``from ci_common import ...`` without breaking the

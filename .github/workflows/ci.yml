@@ -34,7 +34,7 @@ jobs:
       - name: pyflakes
         shell: bash
         working-directory: tools
-        run: python x_media_ci.py lint
+        run: python citeseal.py lint
 
       - name: validate test fixtures
         shell: bash

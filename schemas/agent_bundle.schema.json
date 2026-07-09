@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/atomize-lab/x_media_ci/raw/main/schemas/agent_bundle.schema.json",
+  "$id": "https://github.com/atomize-lab/citeseal/raw/main/schemas/agent_bundle.schema.json",
   "title": "Agent Bundle",
   "description": "A stable, self-describing export of a single archived item, designed for consumption by AI agents (Claude, Hermes, Codex, etc.).",
   "type": "object",

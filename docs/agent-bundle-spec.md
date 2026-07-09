@@ -81,7 +81,7 @@ Each entry in `assets[]` describes one file in the bundle directory:
 ```json
 {
   "exported_at": "2026-07-09T10:00:00Z",
-  "export_tool": "x_media_ci build_agent_bundle v0.1.0",
+  "export_tool": "citeseal build_agent_bundle v0.1.0",
   "source_dir": "tests/fixtures/.../20260708_180000_1234567890",
   "schema_version": "tweet.json v1"
 }
@@ -101,7 +101,7 @@ Each entry in `assets[]` describes one file in the bundle directory:
 
 ```bash
 # Export a bundle from a tweet directory
-xmc export-agent --tweet-dir path/to/tweet_dir --output my_bundle
+cs export-agent --tweet-dir path/to/tweet_dir --output my_bundle
 
 # Point Claude at the bundle
 claude --add-dir my_bundle "Summarize the archived tweet in my_bundle/bundle.json"
@@ -111,13 +111,13 @@ claude --add-dir my_bundle "Summarize the archived tweet in my_bundle/bundle.jso
 
 ```bash
 # Export, then reference in a Hermes session
-xmc export-agent --tweet-dir path/to/tweet_dir --output my_bundle
+cs export-agent --tweet-dir path/to/tweet_dir --output my_bundle
 # In Hermes: "Read my_bundle/bundle.json and summarize the key claims"
 ```
 
 ### For any HTTP client
 
-If the local server is running (`xmc serve`), bundles can be fetched via HTTP:
+If the local server is running (`cs serve`), bundles can be fetched via HTTP:
 
 ```python
 import requests
@@ -141,7 +141,7 @@ If the original text is ≤280 characters, `text_excerpt` contains the full text
 Media files are optionally hashed. To enable hashing:
 
 ```bash
-xmc export-agent --tweet-dir path/to/tweet_dir --output my_bundle --hash-media
+cs export-agent --tweet-dir path/to/tweet_dir --output my_bundle --hash-media
 ```
 
 This adds a `sha256` field to each `media[]` entry. Hashing is opt-in because it adds I/O cost for large media collections.

@@ -1,4 +1,4 @@
-# Contributing to x_media_ci
+# Contributing to citeseal
 
 Thanks for your interest in contributing! This document covers the basics.
 
@@ -6,8 +6,8 @@ Thanks for your interest in contributing! This document covers the basics.
 
 ```bash
 # 1. Fork & clone
-git clone https://github.com/<your-fork>/x_media_ci.git
-cd x_media_ci
+git clone https://github.com/<your-fork>/citeseal.git
+cd citeseal
 
 # 2. Create a virtualenv and install deps
 python -m venv .venv
@@ -19,15 +19,15 @@ pip install -r requirements-dev.txt
 python -m pytest tests/ -v
 
 # 4. Lint
-cd tools && python x_media_ci.py lint && cd ..
+cd tools && python citeseal.py lint && cd ..
 ```
 
 ## Project Structure
 
 ```
-x_media_ci/
+citeseal/
 ├── tools/
-│   ├── x_media_ci.py          # Unified CLI entry point
+│   ├── citeseal.py          # Unified CLI entry point
 │   ├── scripts/                # Core Python modules
 │   │   ├── ci_common.py        # Shared path/IO helpers
 │   │   ├── tweet_schema.py     # tweet.json validation + write_tweet_json()
@@ -77,7 +77,7 @@ tests/fixtures/accounts/<handle>/tweets/YYYY/YYYY-MM/<timestamp>_<tweet_id>/
 
 ```bash
 # Lint
-cd tools && python x_media_ci.py lint && cd ..
+cd tools && python citeseal.py lint && cd ..
 
 # Validate fixtures
 python tools/scripts/tweet_validate.py --root tests/fixtures/accounts
@@ -132,11 +132,11 @@ feat: add --strict flag to tweet_validate
 
 ## Reporting Bugs
 
-Open a [GitHub Issue](https://github.com/atomize-lab/x_media_ci/issues) with:
+Open a [GitHub Issue](https://github.com/atomize-lab/citeseal/issues) with:
 
 1. **What happened** (expected vs actual behavior)
 2. **Steps to reproduce** (commands, input, or tweet URL)
-3. **Environment** (OS, Python version, x_media_ci version)
+3. **Environment** (OS, Python version, citeseal version)
 4. **Logs** (run with `--verbose` or include stack traces)
 
 ## Suggesting Features

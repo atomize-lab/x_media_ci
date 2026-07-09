@@ -26,7 +26,7 @@ publishing. Claude never touches the live web.
 # Assume you have an archived tweet at:
 #   accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890/
 
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890 \
   --output /tmp/my_bundle \
   --hash-media
@@ -46,7 +46,7 @@ This produces:
 ### Step 2: Verify the bundle with a manifest
 
 ```bash
-python tools/x_media_ci.py manifest \
+python tools/citeseal.py manifest \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890 \
   --dry-run
 ```
@@ -113,13 +113,13 @@ Then:
 ```bash
 mkdir /tmp/research_bundles
 
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir path/to/tweet_a --output /tmp/research_bundles/a --hash-media
 
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir path/to/tweet_b --output /tmp/research_bundles/b --hash-media
 
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir path/to/tweet_c --output /tmp/research_bundles/c --hash-media
 ```
 
@@ -155,11 +155,11 @@ self-contained.
 
 ```bash
 # Generate manifest (in the item directory)
-python tools/x_media_ci.py manifest \
+python tools/citeseal.py manifest \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890
 
 # Export bundle (to a separate directory)
-python tools/x_media_ci.py export-agent \
+python tools/citeseal.py export-agent \
   --tweet-dir accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890 \
   --output /tmp/audit_bundle --hash-media
 ```
@@ -200,7 +200,7 @@ with citations.
 
 ```bash
 for dir in accounts/example_user/tweets/2026/2026-07/*/; do
-  python tools/x_media_ci.py export-agent \
+  python tools/citeseal.py export-agent \
     --tweet-dir "$dir" \
     --output "/tmp/digest/$(basename "$dir")" \
     --hash-media

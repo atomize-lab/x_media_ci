@@ -53,7 +53,7 @@ except ImportError:
 
 
 BUNDLE_VERSION = "1.0"
-EXPORT_TOOL_NAME = "x_media_ci build_agent_bundle"
+EXPORT_TOOL_NAME = "citeseal build_agent_bundle"
 MAX_EXCERPT_CHARS = 280
 
 

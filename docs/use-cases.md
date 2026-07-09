@@ -26,16 +26,16 @@ Bookmarks don't work: they depend on the platform, don't preserve media reliably
 python tools/fetch_x.py timeline \
   --handle "researcher_handle" \
   --limit 30 \
-  --ci-root ./x_media/CI \
+  --ci-root ./citeseal \
   --user-data-dir tools/.pw-userdata
 
 # 2. Generate Markdown + OCR exports for every item
-python tools/x_media_ci.py batch \
-  --root ./x_media/CI/accounts \
+python tools/citeseal.py batch \
+  --root ./citeseal/accounts \
   --op all --force
 
 # 3. Validate the archive
-python tools/x_media_ci.py validate --root ./x_media/CI/accounts
+python tools/citeseal.py validate --root ./citeseal/accounts
 ```
 
 ### What the researcher gets
@@ -92,17 +92,17 @@ for handle in alice bob carol dave eve; do
   python tools/fetch_x.py timeline \
     --handle "$handle" \
     --limit 20 \
-    --ci-root ./x_media/CI \
+    --ci-root ./citeseal \
     --user-data-dir tools/.pw-userdata
 done
 
 # 2. Export everything to Markdown
-python tools/x_media_ci.py batch \
-  --root ./x_media/CI/accounts \
+python tools/citeseal.py batch \
+  --root ./citeseal/accounts \
   --op md --force
 
 # 3. Start the local API server
-X_MEDIA_CI_ROOT="$PWD/x_media/CI/accounts" bash tools/server/run_server.sh
+CITESEAL_ROOT="$PWD/citeseal/accounts" bash tools/server/run_server.sh
 ```
 
 ### What the developer gets
@@ -177,7 +177,7 @@ Live web access is unreliable: pages change, media is inaccessible, rate limits 
 
 ```
 I have a local archive of AI-tool-related posts at:
-/home/user/x_media/CI/
+/home/user/citeseal/
 
 Read the global index at indices/tweets.jsonl to see all items.
 Select items from 2026-07-01 to 2026-07-07.

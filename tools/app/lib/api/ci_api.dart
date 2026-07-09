@@ -1,4 +1,4 @@
-// Centralized HTTP client + typed models for the x_media CI server.
+// Centralized HTTP client + typed models for the CiteSeal server.
 //
 // All UI code talks to the server through this class so that:
 ///  * the base URL is configurable (settings screen),

@@ -19,7 +19,7 @@ Already present and tested:
 - GitHub Actions CI: lint + fixture validation + pytest (Ubuntu + Windows)
 - 218 passing tests with fully synthetic fixtures (no third-party media)
 - CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
-- Issue/PR templates, CHANGELOG.md, Makefile, `xmc doctor`
+- Issue/PR templates, CHANGELOG.md, Makefile, `cs doctor`
 - docs: vision.md, architecture.md, agent-integration.md, use-cases.md, roadmap.md, agent-bundle-spec.md, provenance.md
 
 ---
@@ -38,7 +38,7 @@ Make the project instantly understandable and visibly maintained.
 - [x] Add issue/PR templates (`.github/ISSUE_TEMPLATE/`, `pull_request_template.md`)
 - [x] Add `CHANGELOG.md` and v0.1.0 release draft
 - [x] Add `Makefile` or `justfile` (test, lint, validate-fixtures, serve, smoke-cli)
-- [x] Add `xmc doctor` command (check ffmpeg, playwright, adb, Python deps, directory structure)
+- [x] Add `cs doctor` command (check ffmpeg, playwright, adb, Python deps, directory structure)
 - [x] Add Maintainer section to README
 
 ### v0.3 - Agent bundle spec and export (Week 3)
@@ -48,7 +48,7 @@ Define the stable product that agents consume.
 - [x] Add `schemas/agent_bundle.schema.json` (version, item_id, source_platform, source_url, captured_at, author_handle, text_excerpt, media, ocr_text, article_md_path, citation_label, trust_flags, provenance, related_items)
 - [x] Add `docs/agent-bundle-spec.md`
 - [x] Implement `tools/scripts/build_agent_bundle.py`
-- [x] Add `xmc export-agent` CLI command
+- [x] Add `cs export-agent` CLI command
 - [x] Add `tools/examples/agent/minimal_bundle/` example
 - [x] Add tests for bundle generation and schema validation
 
@@ -107,7 +107,7 @@ Valuable but not on the critical path. Pursue after the agent-ready layer is sta
 
 ### Unified CLI
 
-- [ ] `xmc fetch`, `xmc timeline`, `xmc validate`, `xmc fix`, `xmc manifest`, `xmc serve`
+- [ ] `cs fetch`, `cs timeline`, `cs validate`, `cs fix`, `cs manifest`, `cs serve`
 - [ ] Dry-run and no-media modes
 - [ ] Capture summary output in JSON
 - [ ] Normalize exit codes and error messages

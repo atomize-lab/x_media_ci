@@ -5,7 +5,7 @@
 Export a bundle first:
 
 ```bash
-xmc export-agent \
+cs export-agent \
   --tweet-dir path/to/tweet_dir \
   --output my_bundle \
   --hash-media
@@ -28,7 +28,7 @@ claude --add-dir my_bundle "Read my_bundle/bundle.json and provide:
 Copy the `bundle.json` content and paste it into your Claude conversation:
 
 ```
-I'm sharing an agent bundle (JSON) from x_media_ci, a local-first media
+I'm sharing an agent bundle (JSON) from citeseal, a local-first media
 archiver. Please:
 
 1. Summarize the archived post in 2 sentences
@@ -47,9 +47,9 @@ If you export multiple bundles into a parent directory:
 
 ```bash
 mkdir bundles
-xmc export-agent --tweet-dir tweet_a --output bundles/a
-xmc export-agent --tweet-dir tweet_b --output bundles/b
-xmc export-agent --tweet-dir tweet_c --output bundles/c
+cs export-agent --tweet-dir tweet_a --output bundles/a
+cs export-agent --tweet-dir tweet_b --output bundles/b
+cs export-agent --tweet-dir tweet_c --output bundles/c
 ```
 
 Then ask Claude Code to analyze them together:
