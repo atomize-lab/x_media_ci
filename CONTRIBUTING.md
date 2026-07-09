@@ -130,6 +130,28 @@ feat: add --strict flag to tweet_validate
 - The `invalid` fixture (`20260705_090000_5555555555`) is missing required fields.
 - Tests that mutate fixtures must copy them to `tmp_path` first -- never mutate committed fixtures.
 
+## Good First Issues
+
+Issues labeled [`good first issue`](https://github.com/atomize-lab/citeseal/labels/good%20first%20issue)
+are self-contained tasks designed for new contributors. No prior experience with
+the project is required -- each issue includes a concrete checklist and
+verification steps.
+
+### Contribution areas
+
+| Area | Where to look | Typical task |
+|------|--------------|--------------|
+| **Tests** | `tests/`, `tests/fixtures/` | Add test coverage for an untested function, expand edge-case fixtures |
+| **Validation** | `tools/scripts/tweet_validate.py`, `tweet_schema.py` | Add a new validation rule, improve error messages |
+| **Exports** | `tools/scripts/build_agent_bundle.py`, `build_manifest.py` | Add an optional bundle field, improve export output |
+| **CLI** | `tools/citeseal.py` | Add a `--json` output flag, improve `--help` text |
+| **Docs** | `docs/`, `README.md` | Fix a typo, clarify a confusing section, add an example |
+| **Schemas** | `schemas/*.json` | Add an optional field, improve schema descriptions |
+
+If you find a bug while working on a good first issue, open a separate
+[bug report](https://github.com/atomize-lab/citeseal/issues/new?template=bug_report.md)
+so it can be tracked independently.
+
 ## Reporting Bugs
 
 Open a [GitHub Issue](https://github.com/atomize-lab/citeseal/issues) with:

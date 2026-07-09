@@ -206,6 +206,9 @@ indices/
 │   ├── provenance.md
 │   ├── cookbook-claude.md
 │   ├── cookbook-hermes.md
+│   ├── adr/
+│   │   ├── 0001-agent-bundle-as-agent-consumption-layer.md
+│   │   └── 0002-local-first-boundary.md
 │   └── use-cases.md
 ├── tests/               # 218 pytest tests, synthetic fixtures
 ├── .github/workflows/   # CI: lint + validate + pytest (Ubuntu + Windows)
@@ -235,6 +238,7 @@ The archive data itself is usually stored outside the repo or under a local `acc
 | [`docs/cookbook-claude.md`](docs/cookbook-claude.md) | How Claude reads the archive for summarization/citation |
 | [`docs/cookbook-hermes.md`](docs/cookbook-hermes.md) | How Hermes builds trend reports from the archive |
 | [`docs/use-cases.md`](docs/use-cases.md) | Real-world scenarios and workflows |
+| [`docs/adr/`](docs/adr/) | Architecture Decision Records — why key design choices were made |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones toward a stable v1 |
 | [`SECURITY.md`](SECURITY.md) | Security and responsible-use policy |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute |

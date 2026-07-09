@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- nothing yet
+- ADR (Architecture Decision Records): `docs/adr/0001-agent-bundle-as-agent-consumption-layer.md`, `docs/adr/0002-local-first-boundary.md`
+- Good first issue template (`.github/ISSUE_TEMPLATE/good-first-issue.md`) and contribution areas table in CONTRIBUTING.md
+- Three open good first issues (#2 schema reference, #3 sample archive generator, #4 validation error messages)
 
 ## [v0.7.0] - 2026-07-09
 
