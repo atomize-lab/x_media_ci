@@ -28,6 +28,10 @@ def main(argv=None) -> int:
                     help="Treat warnings as errors for the exit code.")
     ap.add_argument("--quiet", action="store_true",
                     help="Only print tweet dirs that have issues.")
+    ap.add_argument("--verbose", "-v", action="store_true",
+                    help="Show all validation errors and warnings (not just a short summary). "
+                         "Default already prints every issue; this flag also prints "
+                         "OK dirs and field-level detail for every check.")
     args = ap.parse_args(argv)
 
     if not args.root and not args.dirs:
@@ -56,8 +60,15 @@ def main(argv=None) -> int:
             bad += 1
         if report.issues and not args.quiet:
             print(f"\n== {td}")
+            # Always surface every issue with field-level context (see ValidationIssue.render).
+            # --verbose also labels each issue with error/warning counts mid-dir.
+            if args.verbose:
+                print(f"   ({len(report.errors)} error(s), {len(report.warnings)} warning(s))")
             for issue in report.issues:
                 print("   " + issue.render())
+        elif args.verbose and not args.quiet:
+            print(f"\n== {td}")
+            print("   OK")
 
     summary = (
         f"\nSummary: {len(targets)} dirs | "

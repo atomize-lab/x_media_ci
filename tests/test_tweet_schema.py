@@ -77,6 +77,22 @@ class TestValidationReport:
         assert "bad thing" in rendered
         assert "/path/to/file" in rendered
 
+    def test_required_field_error_names_the_field(self, tmp_path: Path):
+        """E010 messages must name the field so users can fix tweet.json quickly."""
+        tweet_dir = tmp_path / "t"
+        tweet_dir.mkdir()
+        (tweet_dir / "tweet.json").write_text(
+            json.dumps({"tweet_id": "1", "tweet_url": "https://x.com/a/status/1"}),
+            encoding="utf-8",
+        )
+        report = validate_tweet_dir(tweet_dir)
+        e010 = [e for e in report.errors if e.code == "E010"]
+        assert e010, "expected missing-required-field errors"
+        messages = " ".join(e.message for e in e010)
+        assert "author_handle" in messages
+        assert "datetime_utc" in messages
+        assert "missing required field" in messages
+
 
 # ── validate_tweet_dir: good fixture ────────────────────────────────────────
 

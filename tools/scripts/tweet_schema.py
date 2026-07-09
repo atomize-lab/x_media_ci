@@ -133,16 +133,38 @@ def _read_json(path: Path, report: ValidationReport, label: str) -> dict:
         return {}
 
 
+def _truncate(value, limit: int = 80) -> str:
+    """Render a value for error messages, truncating long strings."""
+    if isinstance(value, str):
+        s = value
+    else:
+        s = repr(value)
+    if len(s) > limit:
+        return s[: limit - 3] + "..."
+    return s
+
+
 def _check_required_fields(meta: dict, report: ValidationReport, where: str) -> None:
     for key in REQUIRED_FIELDS:
-        if not meta.get(key):
+        if key not in meta:
             report.issues.append(ValidationIssue(
-                "error", "E010", f"Missing required field: {key!r}", where,
+                "error", "E010",
+                f"{key}: missing required field (expected non-empty string)",
+                where,
+            ))
+        elif not meta.get(key):
+            actual = _truncate(meta.get(key))
+            report.issues.append(ValidationIssue(
+                "error", "E010",
+                f"{key}: missing required field (expected non-empty string, got {actual!r})",
+                where,
             ))
     for key in RECOMMENDED_FIELDS:
         if key not in meta:
             report.issues.append(ValidationIssue(
-                "warning", "W010", f"Missing recommended field: {key!r}", where,
+                "warning", "W010",
+                f"{key}: missing recommended field",
+                where,
             ))
 
 
@@ -152,7 +174,8 @@ def _check_tweet_url(meta: dict, report: ValidationReport) -> None:
         return
     if not (url.startswith("http://") or url.startswith("https://")):
         report.issues.append(ValidationIssue(
-            "error", "E020", f"tweet_url is not an http(s) URL: {url!r}",
+            "error", "E020",
+            f"tweet_url: expected http(s) URL, got {_truncate(url)!r}",
         ))
     m = TWITTER_STATUS_RE.search(url)
     if m:
@@ -161,7 +184,7 @@ def _check_tweet_url(meta: dict, report: ValidationReport) -> None:
         if author and url_handle and url_handle.lower() != author.lower():
             report.issues.append(ValidationIssue(
                 "warning", "W021",
-                f"tweet_url handle ({url_handle!r}) != author_handle ({author!r})",
+                f"tweet_url: handle in URL ({url_handle!r}) != author_handle ({author!r})",
             ))
 
 
@@ -171,7 +194,8 @@ def _check_author_handle(meta: dict, report: ValidationReport) -> None:
         return
     if h.startswith("@"):
         report.issues.append(ValidationIssue(
-            "warning", "W030", "author_handle should not start with '@'",
+            "warning", "W030",
+            f"author_handle: should not start with '@' (got {_truncate(h)!r})",
         ))
 
 
@@ -182,7 +206,8 @@ def _check_datetime_utc(meta: dict, report: ValidationReport) -> None:
     # Tolerant: accept ISO 8601 with trailing Z; complain otherwise.
     if "T" not in dt:
         report.issues.append(ValidationIssue(
-            "warning", "W040", f"datetime_utc should be ISO 8601: {dt!r}",
+            "warning", "W040",
+            f"datetime_utc: expected ISO 8601 with 'T' separator (got {_truncate(dt)!r})",
         ))
 
 
@@ -190,19 +215,23 @@ def _check_media_entries(meta: dict, tp, report: ValidationReport) -> None:
     media = meta.get("media") or []
     if not isinstance(media, list):
         report.issues.append(ValidationIssue(
-            "error", "E050", "'media' must be a list", str(tp.tweet_json),
+            "error", "E050",
+            f"media: expected list, got {type(media).__name__} ({_truncate(media)!r})",
+            str(tp.tweet_json),
         ))
         return
     for idx, m in enumerate(media):
         if not isinstance(m, dict):
             report.issues.append(ValidationIssue(
-                "error", "E051", f"media[{idx}] must be an object",
+                "error", "E051",
+                f"media[{idx}]: expected object, got {type(m).__name__} ({_truncate(m)!r})",
             ))
             continue
         rel = m.get("file")
         if not rel:
             report.issues.append(ValidationIssue(
-                "warning", "W051", f"media[{idx}] missing 'file' field",
+                "warning", "W051",
+                f"media[{idx}].file: missing 'file' field",
             ))
             continue
         # Accept two common conventions:
@@ -223,8 +252,8 @@ def _check_media_entries(meta: dict, tp, report: ValidationReport) -> None:
         if not any(p.is_file() for p in candidates):
             report.issues.append(ValidationIssue(
                 "error", "E052",
-                f"media[{idx}].file does not exist on disk: {rel} "
-                f"(tried: {', '.join(str(c) for c in candidates)})",
+                f"media[{idx}].file: path does not exist on disk "
+                f"(got {_truncate(rel)!r}; tried: {', '.join(str(c) for c in candidates)})",
             ))
 
 
@@ -234,19 +263,23 @@ def _check_exports_entries(meta: dict, tp, report: ValidationReport) -> None:
         return
     if not isinstance(exports, list):
         report.issues.append(ValidationIssue(
-            "error", "E060", "'exports' must be a list", str(tp.tweet_json),
+            "error", "E060",
+            f"exports: expected list, got {type(exports).__name__} ({_truncate(exports)!r})",
+            str(tp.tweet_json),
         ))
         return
     for idx, e in enumerate(exports):
         if not isinstance(e, dict):
             report.issues.append(ValidationIssue(
-                "error", "E061", f"exports[{idx}] must be an object",
+                "error", "E061",
+                f"exports[{idx}]: expected object, got {type(e).__name__} ({_truncate(e)!r})",
             ))
             continue
         rel = e.get("file")
         if not rel:
             report.issues.append(ValidationIssue(
-                "warning", "W061", f"exports[{idx}] missing 'file' field",
+                "warning", "W061",
+                f"exports[{idx}].file: missing 'file' field",
             ))
             continue
         # Accept "foo.pdf" or "exports/foo.pdf"
@@ -256,7 +289,8 @@ def _check_exports_entries(meta: dict, tp, report: ValidationReport) -> None:
             alt = tp.exports_dir / rel
             if not alt.is_file():
                 report.issues.append(ValidationIssue(
-                    "warning", "W062", f"exports[{idx}].file missing on disk: {rel}",
+                    "warning", "W062",
+                    f"exports[{idx}].file: missing on disk (got {_truncate(rel)!r})",
                 ))
 
 
