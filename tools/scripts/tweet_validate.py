@@ -26,6 +26,7 @@ def main(argv=None) -> int:
     ap.add_argument("dirs", nargs="*", help="One or more tweet directories.")
     ap.add_argument("--strict", action="store_true",
                     help="Treat warnings as errors for the exit code.")
+    ap.add_argument("--verbose", action="store_true", help="Show all issues with field-level context.")
     ap.add_argument("--quiet", action="store_true",
                     help="Only print tweet dirs that have issues.")
     args = ap.parse_args(argv)
