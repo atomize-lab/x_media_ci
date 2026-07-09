@@ -12,6 +12,8 @@ It is designed for builders who use social media as a research, product, or mark
 
 ---
 
+- [Schema reference](docs/schema-reference.md)
+
 ## Why this exists
 
 Web content is fragile. Posts get deleted, media links expire, threads fragment, and AI agents that try to read live pages get unstable, inconsistent context.
