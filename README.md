@@ -79,6 +79,21 @@ Optional but recommended for video handling:
 ffmpeg -version
 ```
 
+### 1b. Try a synthetic sample archive (no capture needed)
+
+```bash
+# Generate 3 fake items under ./sample-archive
+python tools/citeseal.py sample --output ./sample-archive --count 3
+
+# Validate them
+python tools/citeseal.py validate --root ./sample-archive/accounts
+
+# Point the local server at the sample accounts root for demos
+# CITESEAL_ROOT="$PWD/sample-archive/accounts" bash tools/server/run_server.sh
+```
+
+This is fully synthetic demo data — no real social media content.
+
 ### 2. Capture a single post
 
 ```bash

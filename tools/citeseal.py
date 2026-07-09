@@ -589,6 +589,18 @@ def cmd_manifest(args: argparse.Namespace) -> int:
     return _run_script("build_manifest.py", sub_args)
 
 
+def cmd_sample(args: argparse.Namespace) -> int:
+    """Generate a synthetic sample archive for demos and onboarding."""
+    sub_args = [
+        "--output", str(args.output),
+        "--count", str(args.count),
+        "--handle", str(args.handle),
+    ]
+    if args.no_validate:
+        sub_args.append("--no-validate")
+    return _run_script("sample_archive.py", sub_args)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="citeseal",
@@ -751,6 +763,29 @@ def build_parser() -> argparse.ArgumentParser:
     p_man.add_argument("--no-pretty", action="store_true",
                        help="Compact JSON output.")
     p_man.set_defaults(func=cmd_manifest)
+
+    # sample -------------------------------------------------------------
+    p_sample = sub.add_parser(
+        "sample",
+        help="Generate a synthetic sample archive for demos and onboarding.",
+    )
+    p_sample.add_argument(
+        "--output", "-o", default="./sample-archive",
+        help="Output directory (default: ./sample-archive).",
+    )
+    p_sample.add_argument(
+        "--count", "-n", type=int, default=3,
+        help="Number of synthetic items (default: 3).",
+    )
+    p_sample.add_argument(
+        "--handle", default="demo_user",
+        help="Synthetic author handle (default: demo_user).",
+    )
+    p_sample.add_argument(
+        "--no-validate", action="store_true",
+        help="Skip validation of generated items.",
+    )
+    p_sample.set_defaults(func=cmd_sample)
 
     return p
 
