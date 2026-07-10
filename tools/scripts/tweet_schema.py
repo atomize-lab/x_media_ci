@@ -262,9 +262,30 @@ def _check_exports_entries(meta: dict, tp, report: ValidationReport) -> None:
 
 def _check_optional_dirs(meta: dict, tp, report: ValidationReport) -> None:
     # Only complain when media[] mentions a subdir that doesn't exist.
+    media = meta.get("media")
+    if media is None:
+        media = []
+    if not isinstance(media, list):
+        report.issues.append(ValidationIssue(
+            "error",
+            "E050",
+            f"'media' must be a list (got {type(media).__name__}: {media!r})",
+            str(tp.tweet_json),
+        ))
+        return
     declared = set()
-    for m in meta.get("media") or []:
-        f = (m or {}).get("file", "")
+    for idx, m in enumerate(media):
+        if not isinstance(m, dict):
+            report.issues.append(ValidationIssue(
+                "error",
+                "E051",
+                f"media[{idx}] must be an object (got {type(m).__name__}: {m!r})",
+                str(tp.tweet_json),
+            ))
+            continue
+        f = m.get("file", "") or ""
+        if not isinstance(f, str):
+            continue
         for sub in MEDIA_SUBDIRS:
             if f.startswith(f"{sub}/") or f.startswith(f"{sub}\\"):
                 declared.add(sub)

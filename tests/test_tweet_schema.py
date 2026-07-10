@@ -233,3 +233,27 @@ def test_missing_required_field_message_includes_field_name(tmp_path):
     report = validate_tweet_dir(d)
     msgs = " ".join(i.message + " " + i.path for i in report.errors)
     assert "tweet_url" in msgs or "author_handle" in msgs or "datetime" in msgs or report.errors
+
+
+def test_media_non_list_does_not_crash(tmp_path):
+    import json
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path("tools/scripts").resolve()))
+    from tweet_schema import validate_tweet_dir
+    d = tmp_path / "t"
+    d.mkdir()
+    payload = {
+        "tweet_id": "1",
+        "tweet_url": "https://x.com/a/status/1",
+        "author_handle": "a",
+        "datetime": "2024-01-01T00:00:00Z",
+        "text": "hi",
+        "media": "not-a-list",
+    }
+    (d / "tweet.json").write_text(json.dumps(payload), encoding="utf-8")
+    report = validate_tweet_dir(d)
+    assert report.errors, "expected validation errors for non-list media"
+    joined = " ".join(i.message for i in report.errors)
+    assert "media" in joined.lower()
+
