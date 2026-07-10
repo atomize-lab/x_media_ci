@@ -240,6 +240,7 @@ The archive data itself is usually stored outside the repo or under a local `acc
 | [`docs/use-cases.md`](docs/use-cases.md) | Real-world scenarios and workflows |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records — why key design choices were made |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones toward a stable v1 |
+| [`docs/maintenance-workflow.md`](docs/maintenance-workflow.md) | Nightly repository maintenance, contributor ownership, review/merge gates, and AI-assisted checks |
 | [`SECURITY.md`](SECURITY.md) | Security and responsible-use policy |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute |
 | [`CHANGELOG.md`](CHANGELOG.md) | Versioned change history |
