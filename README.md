@@ -301,3 +301,5 @@ code review, and release authority rest with the human maintainer.
 ## License
 
 MIT. See [`LICENSE`](LICENSE).
+
+Fields: [docs/tweet-json-fields.md](docs/tweet-json-fields.md).
