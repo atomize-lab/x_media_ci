@@ -23,22 +23,26 @@ from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
 
-# We need these modules bundled because the entry point imports them
-# dynamically (FastAPI / Pydantic introspection).
-hiddenimports = []
+server_dir = Path(SPECPATH).resolve()  # directory holding this .spec
+tools_root = server_dir.parent
+scripts_pkg = tools_root / "scripts"
+citeseal_py = tools_root / "citeseal.py"
+
+# Analyze every helper module even though the embedded CLI loads its entry
+# scripts with runpy. This lets PyInstaller collect transitive dependencies
+# such as Pillow and ReportLab instead of treating the scripts as inert data.
+script_modules = sorted(
+    path.stem for path in scripts_pkg.glob("*.py") if path.name != "__init__.py"
+)
+hiddenimports = ["citeseal"]
+hiddenimports += script_modules
 hiddenimports += collect_submodules("uvicorn")
 hiddenimports += collect_submodules("fastapi")
 hiddenimports += collect_submodules("pydantic")
 hiddenimports += collect_submodules("anyio")
 hiddenimports += collect_submodules("starlette")
 
-# Bundle the citeseal scripts package so the frozen server can still
-# run md / pdf / ocr / fix / transcode jobs. Also bundle the
-# citeseal.py entry point so the server can spawn it as a subprocess.
-server_dir = Path(SPECPATH).resolve()  # SPECPATH = directory holding this .spec
-tools_root = server_dir.parent
-scripts_pkg = tools_root / "scripts"
-citeseal_py = tools_root / "citeseal.py"
+# Bundle script sources as data for runpy and for useful path/error reporting.
 datas = [
     (str(scripts_pkg), "scripts"),
 ]
@@ -53,7 +57,7 @@ if start_cmd.is_file():
 
 a = Analysis(
     [str(server_dir / "_frozen_entry.py")],
-    pathex=[str(server_dir)],
+    pathex=[str(server_dir), str(tools_root), str(scripts_pkg)],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,

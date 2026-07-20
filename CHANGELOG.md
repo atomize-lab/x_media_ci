@@ -15,7 +15,9 @@ Maintenance release restoring cross-platform demo execution and release artifact
 - Made the live demo's terminal output ASCII-safe and its JSON file I/O explicitly UTF-8, preventing `UnicodeEncodeError` failures on legacy Windows console encodings.
 - Added a `cp1252` subprocess regression test so Windows console compatibility remains covered by the full test suite.
 - Repaired the Windows release job by installing and invoking PyInstaller explicitly, fixing its output path, and setting the health-check port before server startup.
-- Corrected the Linux tarball source layout so bundled scripts remain directly importable; added release packaging contract tests for both platforms.
+- Replaced the non-relocatable Linux virtual-environment payload with a self-contained PyInstaller executable; frozen background jobs now re-execute the embedded CiteSeal CLI without searching for a host Python interpreter.
+- Fixed explicit `--extract` and `--out` path handling for Markdown/PDF commands and added a ReportLab CJK fallback for minimal Linux systems without an installed CJK font.
+- Hardened release verification against unsafe tar members and added real `/api/run` validation-job smoke tests on Windows and Linux; the Linux gate runs the frozen server with no usable host `PATH`.
 
 ### Added
 - ADR (Architecture Decision Records): `docs/adr/0001-agent-bundle-as-agent-consumption-layer.md`, `docs/adr/0002-local-first-boundary.md`

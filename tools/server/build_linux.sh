@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Build a portable, self-contained Linux tarball for the CiteSeal server.
+# Build a self-contained Linux x64 tarball for the CiteSeal server.
 #
-# Why not PyInstaller on Linux? On Ubuntu 22 + glibc 2.35, PyInstaller's
-# bootloader has to be rebuilt for the target ABI, and the resulting
-# binary is still ~30 MB. A 100% pure-Python venv on the other hand is
-# small, debuggable, and runs on any glibc >= 2.31.
+# The release payload contains a PyInstaller-frozen executable rather than a
+# Python virtual environment. Virtual environments contain host-specific
+# interpreter symlinks and are not relocatable across machines.
 #
 # Output:
-#   dist/citeseal_server-linux-x64.tar.gz
+#   tools/dist/citeseal_server-linux-x64.tar.gz
 #
 # Usage:
 #   bash tools/server/build_linux.sh
 set -euo pipefail
+
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS="$(cd "$HERE/.." && pwd)"
 DIST="$TOOLS/dist"
@@ -20,59 +20,64 @@ trap 'rm -rf "$STAGE"' EXIT
 
 NAME="citeseal_server-linux-x64"
 ROOT="$STAGE/$NAME"
-mkdir -p "$ROOT/bin" "$ROOT/venv" "$ROOT/scripts"
+BUILD_VENV="$STAGE/build-venv"
+BUILD_DIST="$STAGE/pyinstaller-dist"
+BUILD_WORK="$STAGE/pyinstaller-work"
+TARBALL="$DIST/$NAME.tar.gz"
 
-echo "[1/5] Copying source..."
-cp -r "$TOOLS/server"            "$ROOT/server"
-cp -r "$TOOLS/scripts/."         "$ROOT/scripts/"
-cp    "$TOOLS/citeseal.py"       "$ROOT/"
-cp    "$TOOLS/requirements.txt"  "$ROOT/"
-cp    "$TOOLS/server/requirements.txt" "$ROOT/server-requirements.txt"
+mkdir -p "$ROOT/bin" "$BUILD_DIST" "$BUILD_WORK" "$DIST"
 
-echo "[2/5] Building venv..."
-python3 -m venv "$ROOT/venv"
-# shellcheck disable=SC1091
-source "$ROOT/venv/bin/activate"
-pip install --upgrade pip --quiet
-pip install -r "$ROOT/requirements.txt"        --quiet
-pip install -r "$ROOT/server-requirements.txt" --quiet
+printf '%s\n' '[1/5] Preparing isolated build environment...'
+if command -v uv >/dev/null 2>&1; then
+  uv venv --seed --python python3 "$BUILD_VENV"
+else
+  python3 -m venv "$BUILD_VENV"
+fi
+"$BUILD_VENV/bin/python" -m pip install --upgrade pip --quiet
+"$BUILD_VENV/bin/python" -m pip install \
+  -r "$TOOLS/requirements.txt" \
+  -r "$HERE/requirements.txt" \
+  'pyinstaller>=6.0,<7.0' \
+  --quiet
 
-echo "[3/5] Writing run script..."
+printf '%s\n' '[2/5] Freezing server executable...'
+"$BUILD_VENV/bin/python" -m PyInstaller \
+  --noconfirm \
+  --clean \
+  --distpath "$BUILD_DIST" \
+  --workpath "$BUILD_WORK" \
+  "$HERE/citeseal_server.spec"
+
+if [[ ! -x "$BUILD_DIST/citeseal_server" ]]; then
+  printf 'ERROR: frozen executable missing: %s\n' \
+    "$BUILD_DIST/citeseal_server" >&2
+  exit 1
+fi
+
+printf '%s\n' '[3/5] Staging portable payload...'
+install -m 0755 \
+  "$BUILD_DIST/citeseal_server" \
+  "$ROOT/bin/citeseal_server"
+
 cat > "$ROOT/bin/run.sh" <<'SH'
 #!/usr/bin/env bash
-# Start the CiteSeal server. Override CITESEAL_ROOT if your
-# accounts/ tree lives somewhere else.
+# Start the self-contained CiteSeal server. No system Python is required.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 export CITESEAL_HOST="${CITESEAL_HOST:-0.0.0.0}"
 export CITESEAL_PORT="${CITESEAL_PORT:-8765}"
 export CITESEAL_ROOT="${CITESEAL_ROOT:-$ROOT/accounts}"
-exec "$ROOT/venv/bin/python" "$ROOT/citeseal_server.py" --host "$CITESEAL_HOST" --port "$CITESEAL_PORT"
+mkdir -p "$CITESEAL_ROOT"
+exec "$HERE/citeseal_server"
 SH
-chmod +x "$ROOT/bin/run.sh"
+chmod 0755 "$ROOT/bin/run.sh"
 
-# Drop a tiny shim that points at uvicorn via the venv's python.
-cat > "$ROOT/citeseal_server.py" <<'PY'
-"""Entry point used by the bundled run.sh."""
-import os
-import uvicorn
-from server.app import app
-
-if __name__ == "__main__":
-    import argparse
-    p = argparse.ArgumentParser()
-    p.add_argument("--host", default=os.environ.get("CITESEAL_HOST", "0.0.0.0"))
-    p.add_argument("--port", type=int,
-                   default=int(os.environ.get("CITESEAL_PORT", "8765")))
-    args = p.parse_args()
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
-PY
-
-echo "[4/5] Writing README + .env.example..."
 cat > "$ROOT/README.txt" <<'TXT'
-CiteSeal server — Linux x64 portable
-=====================================
+CiteSeal server — Linux x64 self-contained bundle
+=================================================
+
+No system Python installation is required.
 
 Quick start:
 
@@ -89,9 +94,17 @@ Environment variables:
     CITESEAL_ROOT  path to your accounts/ tree
 TXT
 
-echo "[5/5] Tarball..."
-mkdir -p "$DIST"
-TARBALL="$DIST/$NAME.tar.gz"
+cat > "$ROOT/.env.example" <<'ENV'
+CITESEAL_HOST=0.0.0.0
+CITESEAL_PORT=8765
+CITESEAL_ROOT=./accounts
+ENV
+
+printf '%s\n' '[4/5] Creating tarball...'
+rm -f "$TARBALL"
 tar -czf "$TARBALL" -C "$STAGE" "$NAME"
-echo "Done: $TARBALL"
+
+printf '%s\n' '[5/5] Verifying tarball contract...'
+"$BUILD_VENV/bin/python" "$HERE/verify_linux_tarball.py" "$TARBALL"
+printf 'Done: %s\n' "$TARBALL"
 ls -lh "$TARBALL"

@@ -11,6 +11,7 @@ This catches environment/path issues that unit tests miss.
 """
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -140,6 +141,46 @@ class TestUnifiedCLI:
         assert "citeseal doctor" in r.stdout
         assert "Python" in r.stdout
         assert "Project layout" in r.stdout
+
+    @pytest.mark.parametrize("command,suffix", [("md", ".md"), ("pdf", ".pdf")])
+    def test_document_commands_accept_explicit_output_paths(
+        self,
+        command: str,
+        suffix: str,
+        tmp_path: Path,
+    ):
+        out = tmp_path / f"full{suffix}"
+        extract = tmp_path / "extract.json"
+        extract.write_text(
+            json.dumps(
+                {
+                    "title": "Portable PDF test",
+                    "author_handle": "example_user",
+                    "url": "https://example.test/item",
+                    "datetime_utc": "2026-07-08T18:01:00Z",
+                    "blocks": [{"type": "p", "text": "Hello from CiteSeal."}],
+                }
+            ),
+            encoding="utf-8",
+        )
+        r = _run(
+            CLI,
+            [
+                command,
+                "--tweet-dir",
+                str(GOOD_DIR),
+                "--extract",
+                str(extract),
+                "--out",
+                str(out),
+                "--force",
+            ],
+        )
+        assert r.returncode == 0, r.stderr
+        assert out.is_file()
+        assert out.stat().st_size > 0
+        if suffix == ".pdf":
+            assert out.read_bytes().startswith(b"%PDF-")
 
 
 # ── export-agent ────────────────────────────────────────────────────────────

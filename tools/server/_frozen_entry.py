@@ -1,32 +1,30 @@
-"""PyInstaller entry point for the CiteSeal server.
+"""PyInstaller entry point for the self-contained CiteSeal server.
 
-This file is **only** used by PyInstaller. The runtime entry point is
-``app:app`` (the FastAPI instance). We import the FastAPI app eagerly
-so PyInstaller picks it up, then start uvicorn programmatically so the
-frozen binary doesn't need an external ``uvicorn`` CLI to be on PATH.
+The frozen executable has two modes:
 
-Run locally (without PyInstaller):
-
-    python server/_frozen_entry.py
-
-Build a single-file Windows executable:
-
-    pyinstaller --noconfirm --clean server/citeseal_server.spec
+* default: start the FastAPI/Uvicorn server;
+* ``--citeseal-cli``: run the bundled CiteSeal CLI in the same embedded
+  Python runtime. The server uses this private mode for background jobs, so a
+  host Python installation is not required.
 """
 from __future__ import annotations
 
+import importlib
 import os
 import sys
+from collections.abc import Sequence
+
+FROZEN_CLI_FLAG = "--citeseal-cli"
 
 
 def _wire_log_file() -> None:
-    """When frozen, also tee stdout/stderr to a log file next to the exe."""
+    """When frozen, also tee server stdout/stderr to a file next to the exe."""
     if not getattr(sys, "frozen", False):
         return
-    log_path = os.path.join(os.path.dirname(sys.executable),
-                            "citeseal_server.log")
+    log_path = os.path.join(
+        os.path.dirname(sys.executable), "citeseal_server.log"
+    )
     log_fp = open(log_path, "a", encoding="utf-8", buffering=1)
-    # Replace stdout/stderr so uvicorn's prints are captured too.
     sys.stdout = _Tee(sys.stdout, log_fp)
     sys.stderr = _Tee(sys.stderr, log_fp)
     print(f"[citeseal_server] logging to {log_path}", flush=True)
@@ -37,16 +35,16 @@ class _Tee:
         self._streams = streams
 
     def write(self, s):
-        for st in self._streams:
+        for stream in self._streams:
             try:
-                st.write(s)
+                stream.write(s)
             except Exception:
                 pass
 
     def flush(self):
-        for st in self._streams:
+        for stream in self._streams:
             try:
-                st.flush()
+                stream.flush()
             except Exception:
                 pass
 
@@ -54,20 +52,45 @@ class _Tee:
         return False
 
 
-# Import the FastAPI app; must happen after sys.path is set up by
-# PyInstaller's bootloader (which adds the frozen dir to sys.path).
-from app import app  # noqa: E402
+def _ensure_runtime_paths() -> None:
+    """Expose bundled data modules to both server and embedded CLI modes."""
+    candidates = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.extend([meipass, os.path.join(meipass, "scripts")])
+    else:
+        tools_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        candidates.extend([tools_root, os.path.join(tools_root, "scripts")])
+    for candidate in reversed(candidates):
+        if candidate not in sys.path:
+            sys.path.insert(0, candidate)
 
 
-def main() -> None:
+def _run_embedded_cli(argv: Sequence[str]) -> int:
+    _ensure_runtime_paths()
+    citeseal_module = importlib.import_module("citeseal")
+    return int(citeseal_module.main(argv) or 0)
+
+
+def _run_server() -> None:
+    _ensure_runtime_paths()
     _wire_log_file()
+    from app import app
     import uvicorn
+
     host = os.environ.get("CITESEAL_HOST", "0.0.0.0")
-    # Use 18765 (not 8765) to reduce the chance of colliding with other
-    # services on a fresh Windows install. Override with CITESEAL_PORT.
+    # Use 18765 (not 8765) to reduce collisions on a fresh install.
     port = int(os.environ.get("CITESEAL_PORT", "18765"))
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 
+def main() -> int:
+    argv = sys.argv[1:]
+    if argv[:1] == [FROZEN_CLI_FLAG]:
+        return _run_embedded_cli(argv[1:])
+    _run_server()
+    return 0
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

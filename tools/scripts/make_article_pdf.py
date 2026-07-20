@@ -18,6 +18,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfbase.ttfonts import TTFont
 
 
@@ -50,7 +51,13 @@ def register_cjk_font():
         if os.path.exists(p):
             pdfmetrics.registerFont(TTFont("CJKFont", p, subfontIndex=0))
             return "CJKFont"
-    raise RuntimeError("No CJK font found on this system.")
+    # ReportLab ships metrics/encoding support for this standard Chinese CID
+    # font. It keeps PDF generation functional on minimal Linux systems where
+    # no CJK TTF/TTC is installed; an explicit/system font above remains the
+    # preferred embedded-font path.
+    fallback = "STSong-Light"
+    pdfmetrics.registerFont(UnicodeCIDFont(fallback))
+    return fallback
 
 
 def styles(cjk_font="CJKFont"):

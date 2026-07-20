@@ -22,6 +22,26 @@ tools\server\run_server.cmd
 
 Then open <http://localhost:8765/docs> for the interactive Swagger UI.
 
+## Standalone release bundles
+
+Tagged releases provide a Windows executable and a Linux x64 tarball. These
+artifacts contain a frozen Python runtime: starting the server and running its
+built-in Markdown, PDF, validation, fix, batch, and export jobs do **not**
+require Python to be installed on the target machine.
+
+```bash
+# Linux x64
+tar -xzf citeseal_server-linux-x64.tar.gz
+./citeseal_server-linux-x64/bin/run.sh
+
+# Windows x64 (PowerShell)
+.\citeseal_server.exe
+```
+
+Some optional operations still invoke non-Python system tools: OCR requires
+Tesseract and media transcoding requires FFmpeg. Set `TESSERACT_CMD` or place
+the corresponding executables on `PATH` when using those operations.
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -60,5 +80,6 @@ until `status` is `done` or `failed`.
 * Same WiFi: phone can reach `http://<PC_IP>:8765/`.
 * USB only: `adb reverse tcp:8765 tcp:8765` then phone uses
   `http://127.0.0.1:8765/`.
-* Windows firewall: first run will pop up a permission dialog; allow
-  `python.exe` on private networks.
+* Windows firewall: development mode may identify `python.exe`; the standalone
+  release identifies `citeseal_server.exe`. Allow only on trusted private
+  networks.

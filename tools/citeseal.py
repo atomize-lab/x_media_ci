@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import runpy
 import shlex
 import subprocess
 import sys
@@ -49,11 +51,49 @@ def _python_executable() -> str:
     return sys.executable or "python"
 
 
+def _system_exit_code(code: object) -> int:
+    """Normalize ``SystemExit.code`` using Python's command-line semantics."""
+    if code is None:
+        return 0
+    if isinstance(code, int):
+        return code
+    print(code, file=sys.stderr)
+    return 1
+
+
+def _run_script_in_process(
+    path: Path,
+    args: Sequence[str],
+    *,
+    cwd: Optional[Path] = None,
+) -> int:
+    """Execute a bundled helper inside the frozen interpreter."""
+    original_argv = sys.argv[:]
+    original_cwd = Path.cwd()
+    sys.argv = [str(path), *args]
+    try:
+        if cwd is not None:
+            os.chdir(cwd)
+        try:
+            runpy.run_path(str(path), run_name="__main__")
+        except SystemExit as exc:
+            return _system_exit_code(exc.code)
+        return 0
+    finally:
+        sys.argv = original_argv
+        os.chdir(original_cwd)
+
+
 def _run_script(script: str, args: Sequence[str], *, cwd: Optional[Path] = None) -> int:
     """Run ``tools/scripts/<script>.py`` with the given args and stream output."""
-    cmd = [_python_executable(), str(_SCRIPTS_DIR / script), *args]
-    pretty = " ".join(shlex.quote(c) for c in cmd)
-    print(f"[citeseal] $ {pretty}", file=sys.stderr)
+    path = _SCRIPTS_DIR / script
+    pretty = " ".join(shlex.quote(c) for c in [str(path), *args])
+    if getattr(sys, "frozen", False):
+        print(f"[citeseal:embedded] $ {pretty}", file=sys.stderr)
+        return _run_script_in_process(path, args, cwd=cwd)
+
+    cmd = [_python_executable(), str(path), *args]
+    print(f"[citeseal] $ {' '.join(shlex.quote(c) for c in cmd)}", file=sys.stderr)
     proc = subprocess.run(cmd, cwd=str(cwd) if cwd else None)
     return proc.returncode
 
@@ -339,8 +379,9 @@ def _meta_for_filename(tweet_dir: Path, args: argparse.Namespace) -> tuple[str, 
 def _add_io_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--tweet-dir", required=True,
                    help="Path to a single tweet directory (containing tweet.json).")
-    p.add_argument("--extract", help="Override path to the extract.json file.")
-    p.add_argument("--out", help="Override output path.")
+    p.add_argument("--extract", type=Path,
+                   help="Override path to the extract.json file.")
+    p.add_argument("--out", type=Path, help="Override output path.")
     p.add_argument("--force", action="store_true",
                    help="Overwrite the output file if it already exists.")
 

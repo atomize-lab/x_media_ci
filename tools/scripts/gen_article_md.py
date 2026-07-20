@@ -26,7 +26,7 @@ def find_local_image(images_dir: Path, media_url: str) -> str:
 
 
 def md_escape(text: str) -> str:
-    """
+    r"""
     对 Markdown 做最小必要转义，避免在某些渲染器里出现异常：
     - \$... \$ 可能被当作数学公式，所以将未转义的 $ 转成 \\$
     - 反引号用于代码块，转义为 \\`

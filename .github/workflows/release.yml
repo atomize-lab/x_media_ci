@@ -42,12 +42,22 @@ jobs:
       - name: Verify exe
         run: |
           $env:CITESEAL_PORT = "8765"
-          $server = Start-Process -FilePath "tools/dist/citeseal_server.exe" -PassThru
+          $env:CITESEAL_ROOT = (Resolve-Path "tests/fixtures/accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890").Path
+          $originalPath = $env:PATH
+          $server = $null
           try {
-            Start-Sleep -Seconds 5
-            (Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8765/api/health").Content
+            # The frozen process and its CLI child must not discover host Python.
+            $env:PATH = "$env:SystemRoot\System32"
+            $server = Start-Process -FilePath "tools/dist/citeseal_server.exe" -PassThru
+            $env:PATH = $originalPath
+            python tools/server/smoke_test_server.py `
+              --root "$env:CITESEAL_ROOT" --timeout 45
+            if ($LASTEXITCODE -ne 0) { throw "Windows frozen smoke test failed" }
           } finally {
-            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+            $env:PATH = $originalPath
+            if ($null -ne $server) {
+              Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+            }
           }
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -71,12 +81,19 @@ jobs:
           python-version: "3.12"
       - name: Build portable tarball
         run: bash tools/server/build_linux.sh
-      - name: Smoke-test
+      - name: Verify and smoke-test
         run: |
+          python tools/server/verify_linux_tarball.py tools/dist/citeseal_server-linux-x64.tar.gz
+          rm -rf /tmp/citeseal_server-linux-x64
           tar -xzf tools/dist/citeseal_server-linux-x64.tar.gz -C /tmp
-          CITESEAL_ROOT=$PWD/../accounts /tmp/citeseal_server-linux-x64/bin/run.sh &
-          sleep 5
-          curl -sf http://127.0.0.1:8765/api/health
+          PATH=/nonexistent \
+            CITESEAL_HOST=127.0.0.1 CITESEAL_PORT=8765 \
+            CITESEAL_ROOT="$PWD/tests/fixtures/accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890" \
+            /tmp/citeseal_server-linux-x64/bin/citeseal_server &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python tools/server/smoke_test_server.py \
+            --root "$PWD/tests/fixtures/accounts/example_user/tweets/2026/2026-07/20260708_180000_1234567890" --timeout 45
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

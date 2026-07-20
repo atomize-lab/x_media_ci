@@ -8,7 +8,7 @@ It is designed for builders who use social media as a research, product, or mark
 
 ![CiteSeal architecture](docs/assets/architecture.svg)
 
-> **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, GitHub Actions CI, 218 passing tests, agent bundle + provenance manifest exports, and a Flutter client skeleton for mobile/desktop review.
+> **Status:** early-stage but functional. Playwright-based capture, structured storage with schema validation, Markdown/PDF/OCR export helpers, a FastAPI local server, cross-platform GitHub Actions CI, agent bundle + provenance manifest exports, and a Flutter client skeleton for mobile/desktop review.
 
 ---
 

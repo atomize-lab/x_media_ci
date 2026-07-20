@@ -89,7 +89,7 @@ make.cmd app-bootstrap                               :: flutter create . 初始�
 make.cmd app-run                                     :: flutter run
 make.cmd app-apk                                     :: flutter build apk --release
 make.cmd dist-win                                    :: PyInstaller -> dist\citeseal_server.exe
-make.cmd dist-linux                                  :: 产 portable venv tar.gz
+make.cmd dist-linux                                  :: 产 self-contained frozen tar.gz
 make.cmd dist-android                                :: 打印 Android 构建步骤
 make.cmd dist                                        :: 当前 OS 能产的全产
 ```

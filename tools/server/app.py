@@ -101,26 +101,12 @@ if (not CI_ROOT.is_dir()) and getattr(sys, "frozen", False):
         CI_ROOT = alt  # even if missing, keep the sane default for the error
 
 
-def _resolve_python() -> str:
-    """Pick the interpreter used to spawn ``citeseal.py``.
-
-    In dev mode, ``sys.executable`` is the active Python — perfect.
-    In PyInstaller-frozen mode, ``sys.executable`` is the frozen
-    server itself, so re-spawning it would just start a second
-    server. Fall back to ``py -3`` (the Windows launcher) or
-    ``python3`` on POSIX.
-    """
-    if not getattr(sys, "frozen", False):
-        return sys.executable or "python"
-    import shutil
-    for cand in ("py", "python", "python3", "python3.11", "python3.12"):
-        p = shutil.which(cand)
-        if p:
-            return p
-    return sys.executable  # last resort; will likely fail clearly
-
-
-PYTHON = _resolve_python()
+FROZEN = bool(getattr(sys, "frozen", False))
+FROZEN_CLI_FLAG = "--citeseal-cli"
+# In development this is the active interpreter. In a PyInstaller build it is
+# the CiteSeal executable itself, which can be re-executed in embedded CLI
+# mode without relying on a Python installation on PATH.
+PYTHON = sys.executable or "python"
 
 # Locate citeseal.py. In dev mode it lives at <tools>/citeseal.py.
 # In PyInstaller-frozen mode, the .spec bundles it into sys._MEIPASS.
@@ -185,13 +171,24 @@ class Job:
             "error": self.error,
         }
 
+    def args_to_argv(self) -> list[str]:
+        return _argv_from_args(self.args)
+
 
 JOBS: dict[str, Job] = {}
 
 
+def _job_command(job: Job) -> list[str]:
+    """Build a job command without requiring host Python when frozen."""
+    argv = [job.op, *job.args_to_argv()]
+    if FROZEN:
+        return [PYTHON, FROZEN_CLI_FLAG, *argv]
+    return [PYTHON, str(CITESEAL), *argv]
+
+
 async def _run_job(job: Job) -> None:
     job.status = "running"
-    cmd = [PYTHON, str(CITESEAL), job.op, *job.args_to_argv()]
+    cmd = _job_command(job)
     pretty = " ".join(shlex.quote(c) for c in cmd)
     job.stdout += f"$ {pretty}\n"
     try:
@@ -363,12 +360,6 @@ def _argv_from_args(args: dict[str, Any]) -> list[str]:
         else:
             out += [flag, str(v)]
     return out
-
-
-# Monkey-patch the Job helper to expose argv()
-def _job_args_to_argv(self) -> list[str]:  # type: ignore[no-redef]
-    return _argv_from_args(self.args)
-Job.args_to_argv = _job_args_to_argv  # type: ignore[attr-defined]
 
 
 @app.post("/api/run")
