@@ -6,6 +6,8 @@ import re
 import subprocess
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -48,6 +50,7 @@ def test_windows_release_sets_health_port_before_starting_server() -> None:
     assert port_index < start_index < health_index
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Linux bundle contract runs on POSIX")
 def test_linux_bundle_copies_scripts_into_flat_import_path(tmp_path: Path) -> None:
     build_script = ROOT / "tools" / "server" / "build_linux.sh"
     copy_line = next(
