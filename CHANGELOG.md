@@ -7,11 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.1] - 2026-07-20
+
+Maintenance release restoring cross-platform demo execution and documenting the repository maintenance process.
+
+### Fixed
+- Made the live demo's terminal output ASCII-safe and its JSON file I/O explicitly UTF-8, preventing `UnicodeEncodeError` failures on legacy Windows console encodings.
+- Added a `cp1252` subprocess regression test so Windows console compatibility remains covered by the full test suite.
+
 ### Added
 - ADR (Architecture Decision Records): `docs/adr/0001-agent-bundle-as-agent-consumption-layer.md`, `docs/adr/0002-local-first-boundary.md`
 - Good first issue template (`.github/ISSUE_TEMPLATE/good-first-issue.md`) and contribution areas table in CONTRIBUTING.md
 - Three open good first issues (#2 schema reference, #3 sample archive generator, #4 validation error messages)
-- Live demo script `tools/scripts/demo_agent_consumption.py`: end-to-end export-agent → manifest → agent consumption pipeline (synthetic fixtures, 219 tests)
+- Live demo script `tools/scripts/demo_agent_consumption.py`: end-to-end export-agent → manifest → agent consumption pipeline using synthetic fixtures
+
+### Changed
+- Defined the maintainer workflow, safety gates, and nightly maintenance boundaries in `docs/maintenance-workflow.md`.
 
 ## [v0.7.0] - 2026-07-09
 
