@@ -67,10 +67,10 @@ def step(n: int, title: str) -> None:
 def main() -> int:
     bundle_dir_arg = sys.argv[sys.argv.index("--bundle-dir") + 1] if "--bundle-dir" in sys.argv else None
 
-    print("╔══════════════════════════════════════════════════════════╗")
-    print("║   CiteSeal Live Demo: export-agent → consumption        ║")
-    print("║   (fully synthetic data — no real social media content) ║")
-    print("╚══════════════════════════════════════════════════════════╝")
+    print("=" * 60)
+    print("  CiteSeal Live Demo: export-agent -> consumption")
+    print("  (fully synthetic data - no real social media content)")
+    print("=" * 60)
 
     if not FIXTURE_TWEET_DIR.exists():
         print(f"ERROR: fixture not found: {FIXTURE_TWEET_DIR}")
@@ -97,8 +97,8 @@ def main() -> int:
         print(f"ERROR: bundle.json not created at {bundle_json}")
         return 1
 
-    bundle = json.loads(bundle_json.read_text())
-    print(f"  ✓ bundle.json created ({bundle_json.stat().st_size} bytes)")
+    bundle = json.loads(bundle_json.read_text(encoding="utf-8"))
+    print(f"  [OK] bundle.json created ({bundle_json.stat().st_size} bytes)")
     print(f"    item_id: {bundle.get('item_id')}")
     print(f"    author:  @{bundle.get('author_handle')}")
     print(f"    assets:  {len(bundle.get('assets', []))} files")
@@ -111,8 +111,10 @@ def main() -> int:
         "--dry-run",
     ])
     manifest = json.loads(result.stdout)
-    manifest_out.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    print(f"  ✓ manifest.json generated ({manifest_out.stat().st_size} bytes)")
+    manifest_out.write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    print(f"  [OK] manifest.json generated ({manifest_out.stat().st_size} bytes)")
     print(f"    files hashed:    {len(manifest.get('files', []))}")
     print(f"    transforms:      {len(manifest.get('transforms', []))}")
     trust = manifest.get("trust_flags", {})
@@ -130,19 +132,19 @@ def main() -> int:
         for mpath, mhash in manifest_hashes.items():
             if mpath.endswith(fname) and bhash == mhash:
                 verified += 1
-                print(f"  ✓ {fname}: hash matches manifest")
+                print(f"  [OK] {fname}: hash matches manifest")
                 break
     total_media = len(bundle.get("media", []))
-    print(f"  → {verified}/{total_media} media files verified against manifest")
+    print(f"  -> {verified}/{total_media} media files verified against manifest")
     if verified != total_media:
-        print("  WARNING: not all media hashes matched — check bundle export")
+        print("  WARNING: not all media hashes matched - check bundle export")
 
     # Step 4: Simulate agent consumption (no LLM needed — structural check)
     step(4, "Simulate agent consumption (structural validation)")
     checks = []
 
     def check(label: str, cond: bool) -> None:
-        status = "✓" if cond else "✗"
+        status = "[OK]" if cond else "[FAIL]"
         checks.append(cond)
         print(f"  {status} {label}")
 
@@ -159,7 +161,7 @@ def main() -> int:
           all((bundle_dir / "media" / m["file"]).exists() for m in bundle.get("media", [])))
 
     all_pass = all(checks)
-    print(f"\n  → {sum(checks)}/{len(checks)} structural checks passed")
+    print(f"\n  -> {sum(checks)}/{len(checks)} structural checks passed")
 
     # Step 5: Show what an agent prompt would look like
     step(5, "Agent consumption prompt (for Claude / Hermes / Codex)")
@@ -169,10 +171,9 @@ def main() -> int:
 3. The provenance information (when captured, source URL, export tool)
 4. Any trust_flags that indicate data quality issues
 5. A suggested citation using the citation_label field"""
-    print("  ┌─ Claude Code CLI example:")
-    print(f"  │ claude --add-dir {bundle_dir} \\")
-    print(f'  │   "{prompt}"')
-    print("  └─")
+    print("  Claude Code CLI example:")
+    print(f"    claude --add-dir {bundle_dir} \\")
+    print(f'      "{prompt}"')
     print(f"\n  Bundle directory: {bundle_dir}")
     print(f"  Manifest:         {manifest_out}")
 
@@ -186,11 +187,11 @@ def main() -> int:
     # Final result
     print(f"\n{'='*60}")
     if all_pass:
-        print("  ✓ DEMO PASSED — agent consumption pipeline is functional")
+        print("  [PASS] DEMO PASSED - agent consumption pipeline is functional")
         print(f"{'='*60}")
         return 0
     else:
-        print("  ✗ DEMO FAILED — some structural checks did not pass")
+        print("  [FAIL] DEMO FAILED - some structural checks did not pass")
         print(f"{'='*60}")
         return 1
 
