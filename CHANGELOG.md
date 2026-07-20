@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.7.1] - 2026-07-20
 
-Maintenance release restoring cross-platform demo execution and documenting the repository maintenance process.
+Maintenance release restoring cross-platform demo execution and release artifact builds, while documenting the repository maintenance process.
 
 ### Fixed
 - Made the live demo's terminal output ASCII-safe and its JSON file I/O explicitly UTF-8, preventing `UnicodeEncodeError` failures on legacy Windows console encodings.
 - Added a `cp1252` subprocess regression test so Windows console compatibility remains covered by the full test suite.
+- Repaired the Windows release job by installing and invoking PyInstaller explicitly, fixing its output path, and setting the health-check port before server startup.
+- Corrected the Linux tarball source layout so bundled scripts remain directly importable; added release packaging contract tests for both platforms.
 
 ### Added
 - ADR (Architecture Decision Records): `docs/adr/0001-agent-bundle-as-agent-consumption-layer.md`, `docs/adr/0002-local-first-boundary.md`

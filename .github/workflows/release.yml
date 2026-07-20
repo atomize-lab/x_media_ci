@@ -36,14 +36,19 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r tools/requirements.txt
           python -m pip install -r tools/server/requirements.txt
+          python -m pip install pyinstaller
       - name: Build with PyInstaller
-        run: pyinstaller --noconfirm --clean tools/server/citeseal_server.spec
+        run: python -m PyInstaller --noconfirm --clean --distpath tools/dist --workpath tools/build tools/server/citeseal_server.spec
       - name: Verify exe
         run: |
-          tools\dist\citeseal_server.exe &
           $env:CITESEAL_PORT = "8765"
-          Start-Sleep -Seconds 5
-          (Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8765/api/health").Content
+          $server = Start-Process -FilePath "tools/dist/citeseal_server.exe" -PassThru
+          try {
+            Start-Sleep -Seconds 5
+            (Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8765/api/health").Content
+          } finally {
+            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+          }
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

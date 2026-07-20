@@ -24,8 +24,8 @@ mkdir -p "$ROOT/bin" "$ROOT/venv" "$ROOT/scripts"
 
 echo "[1/5] Copying source..."
 cp -r "$TOOLS/server"            "$ROOT/server"
-cp -r "$TOOLS/scripts"           "$ROOT/scripts"
-cp    "$TOOLS/citeseal.py"     "$ROOT/"
+cp -r "$TOOLS/scripts/."         "$ROOT/scripts/"
+cp    "$TOOLS/citeseal.py"       "$ROOT/"
 cp    "$TOOLS/requirements.txt"  "$ROOT/"
 cp    "$TOOLS/server/requirements.txt" "$ROOT/server-requirements.txt"
 
